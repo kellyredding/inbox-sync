@@ -35,22 +35,28 @@ module InboxSyncro
 
     should have_instance_method  :validate!
 
-    should "complain if missing required configs" do
+    should "complain if missing :source config" do
       assert_raises ArgumentError do
         subject.source = nil
         subject.validate!
       end
+    end
 
+    should "complain if missing :dest config" do
       assert_raises ArgumentError do
         subject.dest = nil
         subject.validate!
       end
+    end
 
+    should "complain if missing :notify config" do
       assert_raises ArgumentError do
         subject.notify = nil
         subject.validate!
       end
+    end
 
+    should "complain if missing :archive_folder config" do
       assert_raises ArgumentError do
         subject.archive_folder = nil
         subject.validate!
@@ -141,32 +147,42 @@ module InboxSyncro
       :required => true
     }
 
-    should "complain if missing required configs" do
+    should "complain if missing :host config" do
       assert_raises ArgumentError do
         subject.host = nil
         subject.validate!
       end
+    end
 
+    should "complain if missing :port config" do
       assert_raises ArgumentError do
         subject.port = nil
         subject.validate!
       end
+    end
 
+    should "complain if missing :ssl config" do
       assert_raises ArgumentError do
         subject.ssl = nil
         subject.validate!
       end
+    end
 
+    should "complain if missing :login config" do
       assert_raises ArgumentError do
         subject.login = nil
         subject.validate!
       end
+    end
 
+    should "complain if missing :inbox config" do
       assert_raises ArgumentError do
         subject.inbox = nil
         subject.validate!
       end
+    end
 
+    should "complain if missing :host config" do
       assert_raises ArgumentError do
         subject.expunge = nil
         subject.validate!
@@ -206,42 +222,56 @@ module InboxSyncro
 
     should have_instance_method  :validate!
 
-    should "complain if missing required configs" do
+    should "complain if missing :host config" do
       assert_raises ArgumentError do
         subject.host = nil
         subject.validate!
       end
+    end
 
+    should "complain if missing :port config" do
       assert_raises ArgumentError do
         subject.port = nil
         subject.validate!
       end
+    end
 
+    should "complain if missing :tls config" do
       assert_raises ArgumentError do
         subject.tls = nil
         subject.validate!
       end
+    end
 
+    should "complain if missing :helo config" do
       assert_raises ArgumentError do
         subject.helo = nil
         subject.validate!
       end
+    end
 
+    should "complain if missing :login config" do
       assert_raises ArgumentError do
         subject.login = nil
         subject.validate!
       end
+    end
 
+    should "complain if missing :authtype config" do
       assert_raises ArgumentError do
         subject.authtype = nil
         subject.validate!
       end
+    end
 
+    should "complain if missing :to_addrs config" do
       assert_raises ArgumentError do
         subject.to_addrs = nil
         subject.validate!
       end
+    end
 
+    should "complain if empty :to_addrs config" do
       assert_raises ArgumentError do
         subject.to_addrs = []
         subject.validate!
