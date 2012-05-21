@@ -4,12 +4,12 @@ require File.expand_path('../lib/inbox-syncro/version', __FILE__)
 Gem::Specification.new do |gem|
   gem.name        = "inbox-syncro"
   gem.version     = InboxSyncro::VERSION
-  gem.description = %q{TODO: Write a gem description}
-  gem.summary     = %q{TODO: Write a gem summary}
+  gem.description = %q{Move messages from one inbox to another}
+  gem.summary     = %q{Move messages from one inbox to another}
 
-  gem.authors     = ["TODO: authors"]
-  gem.email       = ["TODO: emails"]
-  gem.homepage    = "http://github.com/__/inbox-syncro"
+  gem.authors     = ["Kelly Redding"]
+  gem.email       = ["kelly@kellyredding.com"]
+  gem.homepage    = "http://github.com/kellyredding/inbox-syncro"
 
   gem.files         = `git ls-files`.split("\n")
   gem.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
