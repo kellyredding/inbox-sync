@@ -1,0 +1,3 @@
+module InboxSyncro
+
+end
