@@ -80,11 +80,39 @@ module InboxSyncro
 
   end
 
-  class IMAPConfigTests < ConfigTests
-    before do
-      @source = @config.source
+  class CredentialsTests < ConfigTests
+    subject { @config.source.login }
+
+    should have_option :user, :required => true
+    should have_option :pw, :required => true
+
+    should have_instance_method :validate!
+
+    should "complain if missing :user config" do
+      assert_raises ArgumentError do
+        subject.user = nil
+        subject.validate!
+      end
     end
-    subject { @source }
+
+    should "complain if missing :pw config" do
+      assert_raises ArgumentError do
+        subject.pw = nil
+        subject.validate!
+      end
+    end
+
+    should "be built from set of args" do
+      cred = InboxSyncro::Config::Credentials.new 'me', 'secret'
+
+      assert_equal 'me',     cred.user
+      assert_equal 'secret', cred.pw
+    end
+
+  end
+
+  class IMAPConfigTests < ConfigTests
+    subject { @config.source }
 
     should have_option :host, :required => true
 
@@ -98,17 +126,10 @@ module InboxSyncro
       :required => true
     }
 
-    should have_instance_method  :login
-    should "have a namespace for login info" do
-      assert_kind_of NsOptions::Namespace, subject.login
-
-      assert_respond_to :user, subject.login
-      assert_respond_to :pw, subject.login
-
-      assert_nil subject.login.user
-      assert_nil subject.login.pw
-    end
-
+    should have_option :login, InboxSyncro::Config::Credentials, {
+      :default => {},
+      :required => true
+    }
 
     should have_option :inbox, {
       :default => "INBOX",
@@ -137,12 +158,7 @@ module InboxSyncro
       end
 
       assert_raises ArgumentError do
-        subject.login.user = nil
-        subject.validate!
-      end
-
-      assert_raises ArgumentError do
-        subject.login.pw = nil
+        subject.login = nil
         subject.validate!
       end
 
@@ -176,8 +192,10 @@ module InboxSyncro
 
     should have_option :helo, :required => true
 
-    should have_option :user, :required => true
-    should have_option :pw, :required => true
+    should have_option :login, InboxSyncro::Config::Credentials, {
+      :default => {},
+      :required => true
+    }
 
     should have_option :authtype, {
       :default => :login,
@@ -210,12 +228,7 @@ module InboxSyncro
       end
 
       assert_raises ArgumentError do
-        subject.user = nil
-        subject.validate!
-      end
-
-      assert_raises ArgumentError do
-        subject.pw = nil
+        subject.login = nil
         subject.validate!
       end
 

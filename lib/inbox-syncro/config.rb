@@ -6,19 +6,35 @@ module InboxSyncro; end
 class InboxSyncro::Config
   include NsOptions::Proxy
 
+  class Credentials
+    include NsOptions::Proxy
+
+    opt :user, :required => true
+    opt :pw, :required => true
+
+    def initialize(*args)
+      if args.size == 1
+        self.apply(args.last)
+      else
+        self.user, self.pw = args
+      end
+    end
+
+    def validate!
+      if !required_set?
+        raise ArgumentError, "some required configs are missing"
+      end
+    end
+  end
+
   class IMAPConfig
     include NsOptions::Proxy
 
     opt :host, :required => true
     opt :port, :default => 143, :required => true
-    opt :ssl,  NsOptions::Boolean, :default => false, :required => true
-
-    ns :login do
-      opt :user, :required => true
-      opt :pw, :required => true
-    end
-
-    opt :inbox,   :default => "INBOX", :required => true
+    opt :ssl, NsOptions::Boolean, :default => false, :required => true
+    opt :login, Credentials, :required => true, :default => {}
+    opt :inbox, :default => "INBOX", :required => true
     opt :expunge, NsOptions::Boolean, :default => true, :required => true
 
     def validate!
@@ -26,9 +42,7 @@ class InboxSyncro::Config
         raise ArgumentError, "some required configs are missing"
       end
 
-      if !login.required_set?
-        raise ArgumentError, "some required :login configs are missing"
-      end
+      login.validate!
     end
   end
 
@@ -39,8 +53,7 @@ class InboxSyncro::Config
     opt :port, :default => 587, :required => true
     opt :tls,  NsOptions::Boolean, :default => true, :required => true
     opt :helo, :required => true
-    opt :user, :required => true
-    opt :pw, :required => true
+    opt :login, Credentials, :required => true, :default => {}
     opt :authtype, :default => :login, :required => true
     opt :to_addrs, :required => true
 
@@ -48,6 +61,8 @@ class InboxSyncro::Config
       if !required_set?
         raise ArgumentError, "some required configs are missing"
       end
+
+      login.validate!
     end
   end
 
