@@ -18,5 +18,5 @@ Gem::Specification.new do |gem|
 
   gem.add_development_dependency("assert")
 
-  # gem.add_dependency("gem-name", ["~> 0.0"])
+  gem.add_dependency("ns-options", ["~> 0.4"])
 end
