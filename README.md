@@ -1,4 +1,4 @@
-# InboxSyncro
+# InboxSync
 
 Move messages from one inbox to another.  Useful when server-side email forwarding is not an option.  Can apply rules to messages as they are being moved.  Run on-demand, on a schedule, or as a daemon.
 
@@ -6,7 +6,7 @@ Move messages from one inbox to another.  Useful when server-side email forwardi
 
 Add this line to your application's Gemfile:
 
-    gem 'inbox-syncro'
+    gem 'inbox-sync'
 
 And then execute:
 
@@ -14,16 +14,16 @@ And then execute:
 
 Or install it yourself as:
 
-    $ gem install inbox-syncro
+    $ gem install inbox-sync
 
 ## Usage
 
-It should be fairly straight-forward: create and configure a syncro then run it.  This will move all messages in the `source` inbox to the `dest` inbox.
+It should be fairly straight-forward: create and configure a sync then run it.  This will move all messages in the `source` inbox to the `dest` inbox.
 
-### Create your Syncro
+### Create your Sync
 
 ```ruby
-sync = InboxSyncro.new
+sync = InboxSync.new
 ```
 
 ### Configure it
@@ -46,10 +46,10 @@ end
 ### Run it
 
 ```ruby
-InboxSyncro.run(sync)
+InboxSync.run(sync)
 ```
 
-InboxSyncro uses IMAP to query the source inbox, process its messages, append them to the dest inbox, and archive them on the source.
+InboxSync uses IMAP to query the source inbox, process its messages, append them to the dest inbox, and archive them on the source.
 
 ## Configs
 

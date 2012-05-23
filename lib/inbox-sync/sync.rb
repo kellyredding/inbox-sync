@@ -1,14 +1,14 @@
-require 'inbox-syncro/config'
+require 'inbox-sync/config'
 # require 'net/imap'
 
-module InboxSyncro
+module InboxSync
 
   class Sync
 
     attr_reader :config, :source_imap, :dest_imap, :notify_smtp
 
     def initialize(configs={})
-      @config = InboxSyncro::Config.new(configs)
+      @config = InboxSync::Config.new(configs)
       @source_imap = nil
       @dest_imap   = nil
       @notify_smtp = nil
