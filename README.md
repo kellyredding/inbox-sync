@@ -73,8 +73,8 @@ IMAP settings for the destination inbox.  Has the some attributes and defaults a
 SMTP settings to send notifications with.
 
 * *host*: eg. `'smtp.some-domain.com'`.
-* *port*: defaults to `587`.
-* *tls*: whethe to use TLS encryption.  defaults to `true`.
+* *port*: defaults to `25`.
+* *tls*: whethe to use TLS encryption.  defaults to `false`.
 * *helo*: the helo domain to send with.
 * *login*: credentials (user, pw).
 * *authtype*: defaults to `:login`.

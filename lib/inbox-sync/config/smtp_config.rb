@@ -9,8 +9,8 @@ class InboxSync::Config
     include NsOptions::Proxy
 
     opt :host, :required => true
-    opt :port, :default => 587, :required => true
-    opt :tls,  NsOptions::Boolean, :default => true, :required => true
+    opt :port, :default => 25, :required => true
+    opt :tls,  NsOptions::Boolean, :default => false, :required => true
     opt :helo, :required => true
     opt :login, Credentials, :required => true, :default => {}
     opt :authtype, :default => :login, :required => true

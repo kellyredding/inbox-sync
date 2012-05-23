@@ -197,12 +197,12 @@ module InboxSync
     should have_option :host, :required => true
 
     should have_option :port, {
-      :default => 587,
+      :default => 25,
       :required => true
     }
 
     should have_option :tls,  NsOptions::Boolean, {
-      :default => true,
+      :default => false,
       :required => true
     }
 
