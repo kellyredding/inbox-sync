@@ -22,6 +22,7 @@ class InboxSyncro::Config
         raise ArgumentError, "some required configs are missing"
       end
     end
+
   end
 
 end

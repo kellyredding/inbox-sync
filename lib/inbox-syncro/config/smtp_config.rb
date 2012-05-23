@@ -23,6 +23,7 @@ class InboxSyncro::Config
 
       login.validate!
     end
+
   end
 
 end

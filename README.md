@@ -30,11 +30,11 @@ sync = InboxSyncro.new
 
 ```ruby
 # manually set configs
-sync.source.host = 'imap.source-host.com'
+sync.config.source.host = 'imap.source-host.com'
 
 # or use a more DSL like approach
-sync.source.login.user 'me'
-sync.source.login.pw   'secret'
+sync.config.source.login.user 'me'
+sync.config.source.login.pw   'secret'
 
 # use a configure block, if you like
 sync.configure do
