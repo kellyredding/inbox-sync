@@ -1,29 +1,29 @@
 require 'assert'
 require 'ns-options/assert_macros'
 
-require 'inbox-syncro/config'
+require 'inbox-sync/config'
 
-module InboxSyncro
+module InboxSync
 
   class ConfigTests < Assert::Context
     include NsOptions::AssertMacros
 
     before do
-      @config = InboxSyncro::Config.new
+      @config = InboxSync::Config.new
     end
     subject { @config }
 
-    should have_option :source, InboxSyncro::Config::IMAPConfig, {
+    should have_option :source, InboxSync::Config::IMAPConfig, {
       :default => {},
       :required => true
     }
 
-    should have_option :dest,   InboxSyncro::Config::IMAPConfig, {
+    should have_option :dest,   InboxSync::Config::IMAPConfig, {
       :default => {},
       :required => true
     }
 
-    should have_option :notify, InboxSyncro::Config::SMTPConfig, {
+    should have_option :notify, InboxSync::Config::SMTPConfig, {
       :default => {},
       :required => true
     }
@@ -109,7 +109,7 @@ module InboxSyncro
     end
 
     should "be built from set of args" do
-      cred = InboxSyncro::Config::Credentials.new 'me', 'secret'
+      cred = InboxSync::Config::Credentials.new 'me', 'secret'
 
       assert_equal 'me',     cred.user
       assert_equal 'secret', cred.pw
@@ -132,7 +132,7 @@ module InboxSyncro
       :required => true
     }
 
-    should have_option :login, InboxSyncro::Config::Credentials, {
+    should have_option :login, InboxSync::Config::Credentials, {
       :default => {},
       :required => true
     }
@@ -208,7 +208,7 @@ module InboxSyncro
 
     should have_option :helo, :required => true
 
-    should have_option :login, InboxSyncro::Config::Credentials, {
+    should have_option :login, InboxSync::Config::Credentials, {
       :default => {},
       :required => true
     }

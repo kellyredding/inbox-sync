@@ -1,9 +1,9 @@
 require 'ns-options'
 require 'ns-options/boolean'
-require 'inbox-syncro/config/credentials'
+require 'inbox-sync/config/credentials'
 
-module InboxSyncro; end
-class InboxSyncro::Config
+module InboxSync; end
+class InboxSync::Config
 
   class SMTPConfig
     include NsOptions::Proxy

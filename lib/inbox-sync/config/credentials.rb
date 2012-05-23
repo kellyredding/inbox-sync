@@ -1,7 +1,7 @@
 require 'ns-options'
 
-module InboxSyncro; end
-class InboxSyncro::Config
+module InboxSync; end
+class InboxSync::Config
 
   class Credentials
     include NsOptions::Proxy

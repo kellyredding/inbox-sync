@@ -1,14 +1,14 @@
 require 'assert'
 
-require 'inbox-syncro/sync'
-require 'inbox-syncro/config'
+require 'inbox-sync/sync'
+require 'inbox-sync/config'
 
-module InboxSyncro
+module InboxSync
 
   class SynceTests < Assert::Context
     before do
-      @sync = InboxSyncro::Sync.new
-      @raw_config = InboxSyncro::Config.new({
+      @sync = InboxSync::Sync.new
+      @raw_config = InboxSync::Config.new({
        :source => { :host => 'imap.test.com'}
       })
     end
@@ -31,7 +31,7 @@ module InboxSyncro
     end
 
     should "configure passing in a settings hash" do
-      a_sync = InboxSyncro::Sync.new({
+      a_sync = InboxSync::Sync.new({
         :source => {:host => 'imap.test.com'}
       })
 

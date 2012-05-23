@@ -1,8 +1,8 @@
 require 'ns-options'
-require 'inbox-syncro/config/imap_config'
-require 'inbox-syncro/config/smtp_config'
+require 'inbox-sync/config/imap_config'
+require 'inbox-sync/config/smtp_config'
 
-module InboxSyncro
+module InboxSync
 
   class Config
     include NsOptions::Proxy
