@@ -42,11 +42,8 @@ module InboxSync
 
     def logout
       if logged_in?
-        logger.info "logging out of source..."
-        @source_imap.logout
-
-        logger.info "logging out of dest..."
-        @dest_imap.logout
+        logout_imap(@source_imap, @config.source)
+        logout_imap(@dest_imap, @config.dest)
 
         @source_imap = @dest_imap = @notify_smtp = nil
       end
@@ -56,7 +53,13 @@ module InboxSync
     end
 
     def each_source_mail_item
-      MailItem.find(@source_imap).each { |mail_item| yield mail_item }
+      items = MailItem.find(@source_imap)
+      logger.debug "* found #{items.size} mails"
+
+      items.each do |mail_item|
+        logger.debug "** #{mail_item.inspect}"
+        yield mail_item
+      end
     end
 
     def append_to_dest(mail_item)
@@ -75,8 +78,7 @@ module InboxSync
     private
 
     def login_imap(named, config)
-      logger.info "logging in to #{named}..."
-
+      logger.debug "* LOGIN: #{config_log_detail(config)}"
       begin
         named_imap = Net::IMAP.new(config.host, config.port, config.ssl)
       rescue Errno::ECONNREFUSED => err
@@ -89,22 +91,37 @@ module InboxSync
         raise Net::IMAP::NoResponseError, "#{named} imap #{config.login.to_hash.inspect}: #{err.message}"
       end
 
+      logger.debug "* SELECT #{config.inbox.inspect}: #{config_log_detail(config)}"
       begin
         named_imap.select(config.inbox)
       rescue Net::IMAP::NoResponseError => err
         raise Net::IMAP::NoResponseError, "#{named} imap: #{err.message}"
       end
 
-      named_imap.expunge if config.expunge
+      if config.expunge
+        logger.debug "* EXPUNGE #{config.inbox.inspect}: #{config_log_detail(config)}"
+        named_imap.expunge
+      end
+
       named_imap
     end
 
+    def logout_imap(imap, config)
+      logger.debug "* LOGOUT: #{config_log_detail(config)}"
+      imap.logout
+    end
+
     def setup_smtp(named, config)
-      logger.info "setting up #{named}..."
+      logger.debug "* SMTP: #{config_log_detail(config)}"
 
       named_smtp = Net::SMTP.new(config.host, config.port)
       named_smtp.enable_starttls if config.tls
+
       named_smtp
+    end
+
+    def config_log_detail(config)
+      "host=#{config.host.inspect}, user=#{config.login.user.inspect}"
     end
 
   end

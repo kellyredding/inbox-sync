@@ -30,7 +30,7 @@ module InboxSync
     end
 
     def inspect
-      "#<#{self.class}:#{'0x%x' % (self.object_id << 1)}: @uid=#{@uid.inspect}, @message={:from => #{@message.from.inspect}, :subject => #{@message.subject}}, 'INTERNALDATE'=#{@meta['INTERNALDATE']}>"
+      "#<#{self.class}:#{'0x%x' % (self.object_id << 1)}: @uid=#{@uid.inspect}, from=#{@message.from.inspect}, subject=#{@message.subject.inspect}, 'INTERNALDATE'=#{@meta['INTERNALDATE'].inspect}>"
     end
 
   end
