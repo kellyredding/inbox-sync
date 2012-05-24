@@ -39,4 +39,30 @@ class Assert::Context
     InboxSync::MailItem.new('12345', TEST_MAIL_DATA['RFC822'], TEST_MAIL_DATA['INTERNALDATE'])
   end
 
+  def setup_sync_mail_item
+    @sync = Assert::Context.new.configured_sync
+    @sync.login
+    @mail_item = Assert::Context.new.test_mail_item
+    [@sync, @mail_item]
+  end
+
+  def empty_source_inbox(sync)
+    sync.source_imap.uid_search(['ALL']).each do |uid|
+      sync.source_imap.uid_store(uid, "+FLAGS", [:Deleted])
+    end
+    sync.source_imap.expunge
+  end
+
+  def reset_source_inbox(sync)
+    empty_source_inbox(sync)
+
+    # append the test mail on the source imap
+    inbox  = sync.config.source.dest.inbox
+    mail_s = test_mail_item.meta['RFC822']
+    flags  = []
+    date   = test_mail_item.meta['INTERNALDATE']
+
+    sync.source_imap.append(inbox, mail_s, flags, date)
+  end
+
 end

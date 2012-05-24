@@ -94,4 +94,24 @@ module InboxSync
 
   end
 
+  class LoggedInTests < ConfiguredTests
+    desc 'and is logged in'
+    before do
+      @sync.login
+    end
+
+  end
+
+  class AppendTests < LoggedInTests
+    should "append a source msg onto the dest" do
+      assert_nothing_raised do
+        @sync.append_to_dest(test_mail_item)
+      end
+    end
+
+    should "parse the destination UID when appending mail items" do
+      assert_match /\A\d+\Z/, @sync.append_to_dest(test_mail_item)
+    end
+  end
+
 end

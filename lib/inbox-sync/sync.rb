@@ -63,12 +63,15 @@ module InboxSync
     end
 
     def append_to_dest(mail_item)
-      # TODO: append the mail into the destination inbox
+      logger.debug "** Appending #{mail_item.uid} to dest #{@config.dest.inbox}"
 
-      # puts "appending msg to dest INBOX..."
-      # result = @dest.append("INBOX", @msg.attr['RFC822'], [], @msg.attr['INTERNALDATE'])
-      # puts result.inspect
+      inbox  = @config.dest.inbox
+      mail_s = mail_item.meta['RFC822']
+      flags  = []
+      date   = mail_item.meta['INTERNALDATE']
 
+      response = @dest_imap.append(inbox, mail_s, flags, date)
+      parse_append_response_uid(response)
     end
 
     def archive_source(mail)
@@ -122,6 +125,13 @@ module InboxSync
 
     def config_log_detail(config)
       "host=#{config.host.inspect}, user=#{config.login.user.inspect}"
+    end
+
+    # Given a response like this:
+    # #<struct Net::IMAP::TaggedResponse tag="RUBY0012", name="OK", data=#<struct Net::IMAP::ResponseText code=#<struct Net::IMAP::ResponseCode name="APPENDUID", data="6 9">, text=" (Success)">, raw_data="RUBY0012 OK [APPENDUID 6 9] (Success)\r\n">
+    # (here '9' is the UID)
+    def parse_append_response_uid(response)
+      response.data.code.data.split(/\s+/).last
     end
 
   end
