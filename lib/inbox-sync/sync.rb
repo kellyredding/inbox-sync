@@ -1,5 +1,6 @@
 require 'inbox-sync/config'
-# require 'net/imap'
+require 'net/imap'
+require 'net/smtp'
 
 module InboxSync
 
@@ -12,22 +13,39 @@ module InboxSync
       @source_imap = nil
       @dest_imap   = nil
       @notify_smtp = nil
+      @logged_in   = false
+    end
+
+    def logged_in?
+      !!@logged_in
     end
 
     def configure(&config_block)
-      @config.instance_eval(&config_block)
+      @config.instance_eval(&config_block) if config_block
+      self
     end
 
     def login
-      # TOOD: login to both the source and dest IMAP
-      # puts "logging in to source..."
-      # @source.login('me','secret')
-      # @source.select("INBOX")
-      # @source.expunge
+      @config.validate!
+
+      @source_imap = login_imap(:source, @config.source)
+      @dest_imap   = login_imap(:dest, @config.dest)
+      @notify_smtp = setup_smtp(:notify, @config.notify)
+
+      @logged_in = true
+      true
     end
 
     def logout
-      # TOOD: logout of both the source and dest IMAP
+      if logged_in?
+        @source_imap.logout
+        @dest_imap.logout
+
+        @source_imap = @dest_imap = @notify_smtp = nil
+      end
+
+      @logged_in = false
+      true
     end
 
     def source_mail
@@ -53,6 +71,41 @@ module InboxSync
 
     def archive_source(mail)
       # TODO
+    end
+
+    private
+
+    def login_imap(named, config)
+      puts "logging in to #{named}..."
+
+      begin
+        named_imap = Net::IMAP.new(config.host, config.port, config.ssl)
+      rescue Errno::ECONNREFUSED => err
+        raise Errno::ECONNREFUSED, "#{named} imap {:host => #{config.host}, :port => #{config.port}, :ssl => #{config.ssl}}: #{err.message}"
+      end
+
+      begin
+        named_imap.login(config.login.user, config.login.pw)
+      rescue Net::IMAP::NoResponseError => err
+        raise Net::IMAP::NoResponseError, "#{named} imap #{config.login.to_hash.inspect}: #{err.message}"
+      end
+
+      begin
+        named_imap.select(config.inbox)
+      rescue Net::IMAP::NoResponseError => err
+        raise Net::IMAP::NoResponseError, "#{named} imap: #{err.message}"
+      end
+
+      named_imap.expunge if config.expunge
+      named_imap
+    end
+
+    def setup_smtp(named, config)
+      puts "setting up #{named}..."
+
+      named_smtp = Net::SMTP.new(config.host, config.port)
+      named_smtp.enable_starttls if config.tls
+      named_smtp
     end
 
   end

@@ -10,10 +10,11 @@ class InboxSync::Config
     opt :pw, :required => true
 
     def initialize(*args)
-      if args.size == 1
+      the_args = args.flatten
+      if the_args.size == 1
         self.apply(args.last)
       else
-        self.user, self.pw = args
+        self.user, self.pw = the_args
       end
     end
 
