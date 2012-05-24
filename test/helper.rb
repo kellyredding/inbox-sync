@@ -36,7 +36,7 @@ class Assert::Context
   }
 
   def test_mail_item
-    InboxSync::MailItem.new(TEST_MAIL_DATA['RFC822'], TEST_MAIL_DATA['INTERNALDATE'])
+    InboxSync::MailItem.new('12345', TEST_MAIL_DATA['RFC822'], TEST_MAIL_DATA['INTERNALDATE'])
   end
 
 end

@@ -55,19 +55,11 @@ module InboxSync
       true
     end
 
-    def source_mail
-      # TODO: return a collection of mail objs that are in the source inbox
-      # mail object is a message object and associate meta
-
-      # @msg = @source.uid_fetch(@source.uid_search(['ALL'])[MSG_ID-1], ['RFC822', 'INTERNALDATE']).first
-
-      # # @dest_msgs = @dest_msgs_data.collect do |msg_data|
-      # #   ::Mail.new(msg_data.attr['RFC822'])
-      # # end
-
+    def each_source_mail_item
+      MailItem.find(@source_imap).each { |mail_item| yield mail_item }
     end
 
-    def append_to_dest(mail)
+    def append_to_dest(mail_item)
       # TODO: append the mail into the destination inbox
 
       # puts "appending msg to dest INBOX..."

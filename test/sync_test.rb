@@ -19,11 +19,11 @@ module InboxSync
     should have_instance_methods :logged_in?, :logger
     should have_instance_method  :configure
     should have_instance_methods :login, :logout
-    should have_instance_method  :source_mail
+    should have_instance_method  :each_source_mail_item
     should have_instance_method  :append_to_dest
+    should have_instance_method  :archive_source
     # TODO: should have_instance_method  :apply_dest_filters
     # TODO: should have_instance_method  :notify
-    should have_instance_method  :archive_source
 
     should "configure using a block" do
       subject.configure do

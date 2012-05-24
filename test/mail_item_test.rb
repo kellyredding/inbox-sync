@@ -11,7 +11,8 @@ module InboxSync
     end
     subject { @item }
 
-    should have_readers :meta, :message
+    should have_readers :uid, :meta, :message
+    should have_class_method :find
 
     should "build a Mail Message from the raw IMAP attr data" do
       assert_kind_of ::Mail::Message, subject.message
