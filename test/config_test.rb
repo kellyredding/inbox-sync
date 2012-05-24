@@ -33,6 +33,11 @@ module InboxSync
       :required => true
     }
 
+    should have_option :logger, Logger, {
+      :required => true,
+      :default => STDOUT
+    }
+
     should have_instance_method  :validate!
 
     should "complain if missing :source config" do

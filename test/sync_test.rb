@@ -16,8 +16,9 @@ module InboxSync
     subject { @sync }
 
     should have_readers :config, :source_imap, :dest_imap, :notify_smtp
+    should have_instance_methods :logged_in?, :logger
     should have_instance_method  :configure
-    should have_instance_methods :login, :logout, :logged_in?
+    should have_instance_methods :login, :logout
     should have_instance_method  :source_mail
     should have_instance_method  :append_to_dest
     # TODO: should have_instance_method  :apply_dest_filters
@@ -28,7 +29,7 @@ module InboxSync
       subject.configure do
         source.host 'imap.test.com'
       end
-      assert_equal @raw_config, subject.config
+      assert_equal @raw_config.source, subject.config.source
     end
 
     should "configure passing in a settings hash" do
@@ -36,7 +37,7 @@ module InboxSync
         :source => {:host => 'imap.test.com'}
       })
 
-      assert_equal a_sync.config, @raw_config
+      assert_equal a_sync.config.source, @raw_config.source
     end
 
     should "return itself when calling `configure`" do

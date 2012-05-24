@@ -1,3 +1,4 @@
+require 'logger'
 require 'ns-options'
 require 'inbox-sync/config/imap_config'
 require 'inbox-sync/config/smtp_config'
@@ -12,6 +13,7 @@ module InboxSync
     opt :notify, SMTPConfig, :required => true, :default => {}
 
     opt :archive_folder, :default => 'Forwarded', :required => true
+    opt :logger, Logger, :required => true, :default => STDOUT
 
     def validate!
       if !required_set?

@@ -16,6 +16,10 @@ module InboxSync
       @logged_in   = false
     end
 
+    def logger
+      @config.logger
+    end
+
     def logged_in?
       !!@logged_in
     end
@@ -38,7 +42,10 @@ module InboxSync
 
     def logout
       if logged_in?
+        logger.info "logging out of source..."
         @source_imap.logout
+
+        logger.info "logging out of dest..."
         @dest_imap.logout
 
         @source_imap = @dest_imap = @notify_smtp = nil
@@ -76,7 +83,7 @@ module InboxSync
     private
 
     def login_imap(named, config)
-      puts "logging in to #{named}..."
+      logger.info "logging in to #{named}..."
 
       begin
         named_imap = Net::IMAP.new(config.host, config.port, config.ssl)
@@ -101,7 +108,7 @@ module InboxSync
     end
 
     def setup_smtp(named, config)
-      puts "setting up #{named}..."
+      logger.info "setting up #{named}..."
 
       named_smtp = Net::SMTP.new(config.host, config.port)
       named_smtp.enable_starttls if config.tls

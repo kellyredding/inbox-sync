@@ -84,6 +84,10 @@ SMTP settings to send notifications with.
 
 The folder on the source to create and archive (move) source inbox messages to when processing is complete.  Defaults to `"Forwarded"`.
 
+### `logger`
+
+A logger to use.  Defaults to ruby's `Logger` on stdout.
+
 ## Rules
 
 TODO

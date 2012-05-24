@@ -25,6 +25,8 @@ class Assert::Context
       notify.helo  'gmail.com'
       notify.login 'suetest@kellyredding.com', 'suetest1'
       notify.to_addrs 'suetest@kellyredding.com'
+
+      logger Logger.new('log/tests.log')
     end
   end
 
