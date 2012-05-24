@@ -46,7 +46,7 @@ class Assert::Context
     [@sync, @mail_item]
   end
 
-  def empty_source_inbox(sync)
+  def empty_source_selected(sync)
     sync.source_imap.uid_search(['ALL']).each do |uid|
       sync.source_imap.uid_store(uid, "+FLAGS", [:Deleted])
     end
@@ -54,15 +54,29 @@ class Assert::Context
   end
 
   def reset_source_inbox(sync)
-    empty_source_inbox(sync)
+    sync.source_imap.select(sync.config.source.inbox)
+    empty_source_selected(sync)
 
     # append the test mail on the source imap
-    inbox  = sync.config.source.dest.inbox
+    inbox  = sync.config.source.inbox
     mail_s = test_mail_item.meta['RFC822']
     flags  = []
     date   = test_mail_item.meta['INTERNALDATE']
 
     sync.source_imap.append(inbox, mail_s, flags, date)
+  end
+
+  def reset_source_archive(sync)
+    begin
+      sync.source_imap.select(sync.config.archive_folder)
+    rescue Net::IMAP::NoResponseError => err
+      # do nothing - archive folder not present - no action needed
+    else
+      empty_source_selected(sync)
+      sync.source_imap.delete(sync.config.archive_folder)
+    ensure
+      sync.source_imap.select(sync.config.source.inbox)
+    end
   end
 
 end

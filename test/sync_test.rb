@@ -21,7 +21,7 @@ module InboxSync
     should have_instance_methods :login, :logout
     should have_instance_method  :each_source_mail_item
     should have_instance_method  :append_to_dest
-    should have_instance_method  :archive_source
+    should have_instance_method  :archive_from_source
     # TODO: should have_instance_method  :apply_dest_filters
     # TODO: should have_instance_method  :notify
 
@@ -112,6 +112,46 @@ module InboxSync
     should "parse the destination UID when appending mail items" do
       assert_match /\A\d+\Z/, @sync.append_to_dest(test_mail_item)
     end
+  end
+
+  class ArchiveTests < LoggedInTests
+    before do
+      reset_source_inbox(@sync)
+      reset_source_archive(@sync)
+
+      @sync_archive_folder = @sync.config.archive_folder
+      @mail_item = MailItem.find(@sync.source_imap).first
+    end
+
+    after do
+      @sync.config.archive_folder = @sync_archive_folder
+      @sync.source_imap.select(@sync.config.source.inbox)
+
+      reset_source_archive(@sync)
+    end
+
+    should "remove the message from the inbox" do
+      @sync.archive_from_source(@mail_item)
+
+      assert_not_included @mail_item.uid, @sync.source_imap.uid_search(['ALL'])
+      assert_empty @sync.source_imap.uid_search(['ALL'])
+    end
+
+    should "move it to the archive folder" do
+      @sync.archive_from_source(@mail_item)
+      @sync.source_imap.select(@sync.config.archive_folder)
+
+      assert_equal 1, @sync.source_imap.uid_search(['ALL']).size
+    end
+
+    should "not archive if no archive folder configured" do
+      @sync.config.archive_folder = nil
+      @sync.archive_from_source(@mail_item)
+      @sync.source_imap.select(@sync.config.source.inbox)
+
+      assert_not_included @mail_item.uid, @sync.source_imap.uid_search(['ALL'])
+    end
+
   end
 
 end

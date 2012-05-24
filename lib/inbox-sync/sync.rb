@@ -74,8 +74,29 @@ module InboxSync
       parse_append_response_uid(response)
     end
 
-    def archive_source(mail)
-      # TODO
+    def archive_from_source(mail_item)
+      folder = @config.archive_folder
+      if !folder.nil? && !folder.empty?
+        logger.debug "** Archiving #{mail_item.uid.inspect}"
+
+        begin
+          @source_imap.select(folder)
+        rescue Net::IMAP::NoResponseError => err
+          logger.debug "* Creating #{folder.inspect} arcive folder"
+          @source_imap.create(folder)
+        ensure
+          @source_imap.select(@config.source.inbox)
+        end
+
+        mark_as_seen(@source_imap, mail_item.uid)
+
+        logger.debug "** Copying #{mail_item.uid.inspect} to #{folder.inspect}"
+        @source_imap.uid_copy(mail_item.uid, folder)
+      end
+
+      mark_as_deleted(@source_imap, mail_item.uid)
+
+      @source_imap.expunge
     end
 
     private
@@ -132,6 +153,16 @@ module InboxSync
     # (here '9' is the UID)
     def parse_append_response_uid(response)
       response.data.code.data.split(/\s+/).last
+    end
+
+    def mark_as_seen(imap, uid)
+      logger.debug "** Marking #{uid.inspect} as :Seen"
+      imap.uid_store(uid, "+FLAGS", [:Seen])
+    end
+
+    def mark_as_deleted(imap, uid)
+      logger.debug "** Marking #{uid.inspect} as :Deleted"
+      imap.uid_store(uid, "+FLAGS", [:Deleted])
     end
 
   end
