@@ -46,7 +46,7 @@ end
 ### Run it
 
 ```ruby
-InboxSync.run(sync)
+InboxSync.run(sync, :timeout => 5)
 ```
 
 InboxSync uses IMAP to query the source inbox, process its messages, append them to the dest inbox, and archive them on the source.
@@ -95,6 +95,60 @@ TODO
 ## Notifications
 
 TODO
+
+## Running
+
+InboxSync provides a `Runner` class that will loop indefinitely, running syncs every `:timeout` seconds.  Stick it in a daemon, a rake task, a CLI, or whatever depending on how you want to invoke it.  Here is an example using it in a basic ruby script:
+
+```ruby
+require 'inbox-sync'
+
+sync = InboxSync::Sync.new.configure do
+  source.host  'imap.gmail.com'
+  source.port  993
+  source.ssl   'Yes'
+  source.login 'joetest@kellyredding.com', 'joetest1'
+
+  dest.host  'imap.gmail.com'
+  dest.port  993
+  dest.ssl   'Yes'
+  dest.login 'suetest@kellyredding.com', 'suetest1'
+
+  notify.host  'smtp.gmail.com'
+  notify.port  587
+  notify.tls   'Yes'
+  notify.helo  'gmail.com'
+  notify.login 'suetest@kellyredding.com', 'suetest1'
+  notify.to_addrs 'suetest@kellyredding.com'
+
+  logger Logger.new('log/tests.log')
+end
+
+InboxSync.run(sync, :timeout => 20)
+```
+
+The `InboxSync.run` method is just a macro for creating a runner and calling its `start` method.
+
+```ruby
+InboxSync::Runner.new(sync, :timeout => 5).start
+```
+
+By default, it will log to `STDOUT` but accepts a `:logger` option to override this.
+
+```ruby
+InboxSync::Runner.new(sync, {
+  :timeout => 5,
+  :logger => Logger.new('/path/to/log.log')
+})
+```
+
+You can pass any number of syncs to run.  Each `:timeout` period, it will run them sequentially:
+
+```ruby
+InboxSync::Runner.new(sync1, sync2, sync3, :timeout => 5).start
+```
+
+The runner traps `SIGINT` and `SIGQUIT` and will shutdown nicely once any in-progress syncs have finished.
 
 ## Contributing
 

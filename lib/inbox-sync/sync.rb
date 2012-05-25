@@ -52,6 +52,13 @@ module InboxSync
       true
     end
 
+    def run
+      each_source_mail_item do |mail_item|
+        append_to_dest(mail_item)
+        archive_from_source(mail_item)
+      end
+    end
+
     def each_source_mail_item
       items = MailItem.find(@source_imap)
       logger.debug "* found #{items.size} mails"
@@ -60,6 +67,8 @@ module InboxSync
         logger.debug "** #{mail_item.inspect}"
         yield mail_item
       end
+      items = nil
+      GC.start
     end
 
     def append_to_dest(mail_item)
@@ -82,7 +91,7 @@ module InboxSync
         begin
           @source_imap.select(folder)
         rescue Net::IMAP::NoResponseError => err
-          logger.debug "* Creating #{folder.inspect} arcive folder"
+          logger.debug "* Creating #{folder.inspect} archive folder"
           @source_imap.create(folder)
         ensure
           @source_imap.select(@config.source.inbox)
