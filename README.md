@@ -82,7 +82,7 @@ SMTP settings to send notifications with.
 
 ### `archive_folder`
 
-The folder on the source to create and archive (move) source inbox messages to when processing is complete.  Defaults to `"Forwarded"`.
+The folder on the source to create and archive (move) source inbox messages to when processing is complete.  Defaults to `"Forwarded"`.  Set to `nil` to disable archiving on the source and delete the messages after processing.
 
 ### `logger`
 

@@ -29,8 +29,7 @@ module InboxSync
     }
 
     should have_option :archive_folder, {
-      :default => "Forwarded",
-      :required => true
+      :default => "Forwarded"
     }
 
     should have_option :logger, Logger, {

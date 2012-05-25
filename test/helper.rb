@@ -4,6 +4,10 @@
 # add root dir to the load path
 $LOAD_PATH.unshift(File.expand_path("../..", __FILE__))
 
+require 'logger'
+require 'net/imap'
+require 'inbox-sync/sync'
+require 'inbox-sync/mail_item'
 
 class Assert::Context
 

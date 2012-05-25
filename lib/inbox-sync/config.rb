@@ -12,7 +12,7 @@ module InboxSync
     opt :dest,   IMAPConfig, :required => true, :default => {}
     opt :notify, SMTPConfig, :required => true, :default => {}
 
-    opt :archive_folder, :default => 'Forwarded', :required => true
+    opt :archive_folder, :default => 'Forwarded'
     opt :logger, Logger, :required => true, :default => STDOUT
 
     def validate!
