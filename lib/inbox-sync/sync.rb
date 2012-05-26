@@ -54,8 +54,15 @@ module InboxSync
 
     def run
       each_source_mail_item do |mail_item|
-        append_to_dest(mail_item)
-        archive_from_source(mail_item)
+        begin
+          append_to_dest(mail_item)
+          archive_from_source(mail_item)
+        rescue Exception => err
+          thread_log "#{err.message} (#{err.class.name})", :warn
+          err.backtrace.each { |bt| thread_log bt.to_s, :warn }
+
+          # TODO: notify
+        end
       end
     end
 
