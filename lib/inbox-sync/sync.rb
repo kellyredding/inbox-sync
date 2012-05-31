@@ -6,12 +6,11 @@ module InboxSync
 
   class Sync
 
-    attr_reader :config, :source_imap, :dest_imap, :notify_smtp
+    attr_reader :config, :source_imap, :notify_smtp
 
     def initialize(configs={})
       @config = InboxSync::Config.new(configs)
       @source_imap = nil
-      @dest_imap   = nil
       @notify_smtp = nil
       @logged_in   = false
     end
@@ -29,11 +28,39 @@ module InboxSync
       self
     end
 
-    def login
-      @config.validate!
+    def setup
+      logger.info "=== #{config_log_detail(@config.source)} sync started. ==="
 
+      @config.validate!
+      login if !logged_in?
+    end
+
+    def teardown
+      logout if logged_in?
+      logger.info "=== #{config_log_detail(@config.source)} sync finished. ==="
+    end
+
+    def run
+      each_source_mail_item do |mail_item|
+        begin
+          response = send_to_dest(mail_item)
+          dest_uid = parse_append_response_uid(response)
+          logger.debug "** dest uid: #{dest_uid.inspect}"
+          archive_on_source(mail_item)
+        rescue Exception => err
+          logger.warn "#{err.message} (#{err.class.name})"
+          err.backtrace.each { |bt| logger.warn bt.to_s }
+          # TODO: notify
+        # ensure
+          # TODO: archive_on_source(mail_item)
+        end
+      end
+    end
+
+    protected
+
+    def login
       @source_imap = login_imap(:source, @config.source)
-      @dest_imap   = login_imap(:dest, @config.dest)
       @notify_smtp = setup_smtp(:notify, @config.notify)
 
       @logged_in = true
@@ -41,56 +68,50 @@ module InboxSync
     end
 
     def logout
-      if logged_in?
-        logout_imap(@source_imap, @config.source)
-        logout_imap(@dest_imap, @config.dest)
-
-        @source_imap = @dest_imap = @notify_smtp = nil
-      end
+      logout_imap(@source_imap, @config.source)
+      @source_imap = @notify_smtp = nil
 
       @logged_in = false
       true
     end
 
-    def run
-      each_source_mail_item do |mail_item|
-        begin
-          append_to_dest(mail_item)
-          archive_from_source(mail_item)
-        rescue Exception => err
-          thread_log "#{err.message} (#{err.class.name})", :warn
-          err.backtrace.each { |bt| thread_log bt.to_s, :warn }
-
-          # TODO: notify
-        end
-      end
-    end
-
     def each_source_mail_item
       items = MailItem.find(@source_imap)
-      logger.debug "* found #{items.size} mails"
+      logger.info "* found #{items.size} mails"
 
       items.each do |mail_item|
         logger.debug "** #{mail_item.inspect}"
         yield mail_item
       end
       items = nil
-      GC.start
+    end
+
+    def send_to_dest(mail_item)
+      # begin
+        append_to_dest(mail_item)
+      # rescue Exception => err
+        # logger.warn "#{err.message} (#{err.class.name})"
+        # err.backtrace.each { |bt| logger.warn bt.to_s }
+
+        # stripped_mail_item = mail_item.stripped
+        # append_to_dest(stripped_mail_item)
+      # end
     end
 
     def append_to_dest(mail_item)
-      logger.debug "** Appending #{mail_item.uid} to dest #{@config.dest.inbox}"
+      logger.info "** Appending #{mail_item.uid} to dest #{@config.dest.inbox}"
 
       inbox  = @config.dest.inbox
       mail_s = mail_item.meta['RFC822']
       flags  = []
       date   = mail_item.meta['INTERNALDATE']
 
-      response = @dest_imap.append(inbox, mail_s, flags, date)
-      parse_append_response_uid(response)
+      using_dest_imap do |imap|
+        imap.append(inbox, mail_s, flags, date)
+      end
     end
 
-    def archive_from_source(mail_item)
+    def archive_on_source(mail_item)
       folder = @config.archive_folder
       if !folder.nil? && !folder.empty?
         logger.debug "** Archiving #{mail_item.uid.inspect}"
@@ -115,7 +136,12 @@ module InboxSync
       @source_imap.expunge
     end
 
-    private
+    def using_dest_imap
+      dest_imap = login_imap(:dest, @config.dest)
+      result = yield dest_imap
+      logout_imap(dest_imap, @config.dest)
+      result
+    end
 
     def login_imap(named, config)
       logger.debug "* LOGIN: #{config_log_detail(config)}"

@@ -15,7 +15,7 @@ module InboxSync
       @logger = opts[:logger] || Logger.new(STDOUT)
       @timeout = timeout.kind_of?(Fixnum) ? timeout : -1
       @shutdown = false
-      @refresh_lock = false
+      @run_lock = false
 
       Signal.trap('SIGINT', lambda{ self.stop })
       Signal.trap('SIGQUIT', lambda{ self.stop })
@@ -56,11 +56,11 @@ module InboxSync
     end
 
     def run_loop
-      if @refresh_lock
+      if @run_lock
         main_log "Lock is taken."
       else
         main_log "Lock available, starting syncs in fresh thread."
-        @refresh_lock = true
+        @run_lock = true
 
         Thread.new do
           thread_log "starting syncs..."
@@ -71,7 +71,7 @@ module InboxSync
             thread_log "#{err.message} (#{err.class.name})", :error
             err.backtrace.each { |bt| thread_log bt.to_s, :error }
           ensure
-            @refresh_lock = false
+            @run_lock = false
           end
 
           thread_log "...syncs finished"
@@ -91,10 +91,9 @@ module InboxSync
     end
 
     def run_syncs
-      # syncs_to_run = @syncs.dup
       @syncs.each do |sync|
         begin
-          sync.login
+          sync.setup
           sync.run
         rescue Exception => err
           thread_log "#{err.message} (#{err.class.name})", :warn
@@ -102,10 +101,9 @@ module InboxSync
 
           # TODO: notify about this
         ensure
-          sync.logout
+          sync.teardown
         end
       end
-      # syncs_to_run = nil
       GC.start
     end
 
