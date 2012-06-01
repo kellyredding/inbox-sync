@@ -13,6 +13,7 @@ module InboxSync
 
     should have_readers :uid, :meta, :message
     should have_class_method :find
+    should have_instance_method :name
 
     should "build a Mail Message from the raw IMAP attr data" do
       assert_kind_of ::Mail::Message, subject.message
@@ -24,6 +25,11 @@ module InboxSync
 
       assert_equal TEST_MAIL_DATA['RFC822'], subject.meta['RFC822']
       assert_equal TEST_MAIL_DATA['INTERNALDATE'], subject.meta['INTERNALDATE']
+    end
+
+    should "be named by its uid, from, subject, and date" do
+      exp = "[12345] suetest@kellyredding.com: \"test mail\" (Thu May 24 2012, 10:34 AM)"
+      assert_equal exp, subject.name
     end
 
   end

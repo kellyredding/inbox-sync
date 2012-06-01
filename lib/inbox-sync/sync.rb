@@ -1,6 +1,8 @@
-require 'inbox-sync/config'
 require 'net/imap'
 require 'net/smtp'
+
+require 'inbox-sync/config'
+require 'inbox-sync/notice/sync_mail_item_error'
 
 module InboxSync
 
@@ -17,6 +19,10 @@ module InboxSync
 
     def logger
       @config.logger
+    end
+
+    def name
+      "#{@config.source.login.user} (#{@config.source.host})"
     end
 
     def logged_in?
@@ -48,12 +54,25 @@ module InboxSync
           logger.debug "** dest uid: #{dest_uid.inspect}"
           archive_on_source(mail_item)
         rescue Exception => err
-          logger.warn "#{err.message} (#{err.class.name})"
-          err.backtrace.each { |bt| logger.warn bt.to_s }
-          # TODO: notify
-        # ensure
+          log_error(err)
+          notify(Notice::SyncMailItemError.new(@notify_smtp, @config.notify, {
+            :error => err,
+            :mail_item => mail_item,
+            :sync => self,
+          }))
+        ensure
           # TODO: archive_on_source(mail_item)
+          mail_item = nil
         end
+      end
+    end
+
+    def notify(notice)
+      logger.info "** sending '#{notice.subject}' to #{notice.to.inspect}"
+      begin
+        notice.send
+      rescue Exception => err
+        log_error(err)
       end
     end
 
@@ -188,6 +207,11 @@ module InboxSync
 
     def config_log_detail(config)
       "host=#{config.host.inspect}, user=#{config.login.user.inspect}"
+    end
+
+    def log_error(err)
+      logger.warn "#{err.message} (#{err.class.name})"
+      err.backtrace.each { |bt| logger.warn bt.to_s }
     end
 
     # Given a response like this:

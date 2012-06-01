@@ -28,7 +28,7 @@ module InboxSync
         run_loop
       end
 
-      main_log "Stopping the runner"
+      main_log "Shutting down the runner"
       shutdown
     end
 
@@ -42,18 +42,6 @@ module InboxSync
     end
 
     private
-
-    def main_log(msg, level=:info)
-      log "[MAIN]: #{msg}", level
-    end
-
-    def thread_log(msg, level=:info)
-      log "[THREAD]: #{msg}", level
-    end
-
-    def log(msg, level)
-      @logger.send(level, msg)
-    end
 
     def run_loop
       if @run_lock
@@ -70,6 +58,7 @@ module InboxSync
           rescue Exception => err
             thread_log "#{err.message} (#{err.class.name})", :error
             err.backtrace.each { |bt| thread_log bt.to_s, :error }
+            # TODO: notify
           ensure
             @run_lock = false
           end
@@ -96,15 +85,34 @@ module InboxSync
           sync.setup
           sync.run
         rescue Exception => err
-          thread_log "#{err.message} (#{err.class.name})", :warn
-          err.backtrace.each { |bt| thread_log bt.to_s, :warn }
+          run_sync_handle_error(err)
+        end
 
-          # TODO: notify about this
-        ensure
+        begin
           sync.teardown
+        rescue Exception => err
+          run_sync_handle_error(err)
         end
       end
       GC.start
+    end
+
+    def run_sync_handle_error(err)
+      thread_log "#{err.message} (#{err.class.name})", :warn
+      err.backtrace.each { |bt| thread_log bt.to_s, :warn }
+      # TODO: notify
+    end
+
+    def main_log(msg, level=:info)
+      log "[MAIN]: #{msg}", level
+    end
+
+    def thread_log(msg, level=:info)
+      log "[THREAD]: #{msg}", level
+    end
+
+    def log(msg, level)
+      @logger.send(level, msg)
     end
 
   end

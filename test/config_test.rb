@@ -222,7 +222,9 @@ module InboxSync
       :required => true
     }
 
-    should have_option :to_addrs, :required => true
+    should have_option :from_addr, :required => true
+
+    should have_option :to_addr, :required => true
 
     should have_instance_method  :validate!
 
@@ -268,16 +270,28 @@ module InboxSync
       end
     end
 
-    should "complain if missing :to_addrs config" do
+    should "complain if missing :from_addr config" do
       assert_raises ArgumentError do
-        subject.to_addrs = nil
+        subject.from_addr = nil
         subject.validate!
       end
     end
 
-    should "complain if empty :to_addrs config" do
+    should "complain if missing :to_addr config" do
       assert_raises ArgumentError do
-        subject.to_addrs = []
+        subject.to_addr = nil
+        subject.validate!
+      end
+    end
+
+    should "complain if empty addrs configs" do
+      assert_raises ArgumentError do
+        subject.from_addr = ""
+        subject.validate!
+      end
+
+      assert_raises ArgumentError do
+        subject.to_addr = ""
         subject.validate!
       end
     end

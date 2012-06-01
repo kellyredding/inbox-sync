@@ -16,8 +16,8 @@ module InboxSync
     subject { @sync }
 
     should have_readers :config, :source_imap, :notify_smtp
-    should have_instance_methods :logged_in?, :logger
-    should have_instance_method  :configure, :setup, :teardown, :run
+    should have_instance_methods :name, :logger, :logged_in?
+    should have_instance_method  :configure, :setup, :teardown, :run, :notify
 
     should "configure using a block" do
       subject.configure do
@@ -36,6 +36,14 @@ module InboxSync
 
     should "return itself when calling `configure`" do
       assert_equal subject, subject.configure
+    end
+
+    should "be named by its source" do
+      subject.configure do
+        source.host 'imap.test.com'
+        source.login.user 'me@example.com'
+      end
+      assert_equal "me@example.com (imap.test.com)", subject.name
     end
 
   end

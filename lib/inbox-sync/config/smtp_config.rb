@@ -14,7 +14,8 @@ class InboxSync::Config
     opt :helo, :required => true
     opt :login, Credentials, :required => true, :default => {}
     opt :authtype, :default => :login, :required => true
-    opt :to_addrs, :required => true
+    opt :from_addr, :required => true
+    opt :to_addr, :required => true
 
     def validate!
       if !required_set?

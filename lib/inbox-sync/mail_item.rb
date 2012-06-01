@@ -4,8 +4,6 @@ module InboxSync
 
   class MailItem
 
-    attr_reader :uid, :meta, :message
-
     def self.find(imap)
       imap.uid_search(['ALL']).
         map do |uid|
@@ -20,6 +18,8 @@ module InboxSync
         end
     end
 
+    attr_reader :uid, :meta, :message
+
     def initialize(uid, rfc822, internal_date)
       @uid = uid
       @meta = {
@@ -29,8 +29,18 @@ module InboxSync
       @message = ::Mail.new(rfc822)
     end
 
+    def name
+      "[#{@uid}] #{@message.from}: #{@message.subject.inspect} (#{time_s(@message.date)})"
+    end
+
     def inspect
       "#<#{self.class}:#{'0x%x' % (self.object_id << 1)}: @uid=#{@uid.inspect}, from=#{@message.from.inspect}, subject=#{@message.subject.inspect}, 'INTERNALDATE'=#{@meta['INTERNALDATE'].inspect}>"
+    end
+
+    private
+
+    def time_s(datetime)
+      datetime.strftime("%a %b %-d %Y, %I:%M %p")
     end
 
   end
