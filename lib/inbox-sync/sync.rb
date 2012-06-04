@@ -106,20 +106,26 @@ module InboxSync
       items = nil
     end
 
-    def send_to_dest(mail_item)
-      # begin
-        append_to_dest(mail_item)
-      # rescue Exception => err
-        # logger.warn "#{err.message} (#{err.class.name})"
-        # err.backtrace.each { |bt| logger.warn bt.to_s }
+    # Send a mail item to the destination:
+    # The idea here is that destinations may not accept corrupted or invalid
+    # mail items.  If appending the original mail item in any way fails,
+    # create a stripped down version of the mail item and try to append that.
+    # If appending the stripped down version still fails, error on up
+    # and it will be archived and notified.
 
-        # stripped_mail_item = mail_item.stripped
-        # append_to_dest(stripped_mail_item)
-      # end
+    def send_to_dest(mail_item)
+      begin
+        append_to_dest(mail_item)
+      rescue Exception => err
+        log_error(err)
+
+        logger.debug "** trying to append a the stripped down version"
+        append_to_dest(mail_item.stripped, 'stripped down ')
+      end
     end
 
-    def append_to_dest(mail_item)
-      logger.info "** Appending #{mail_item.uid} to dest #{@config.dest.inbox}"
+    def append_to_dest(mail_item, desc='')
+      logger.info "** Appending #{desc}#{mail_item.uid} to dest #{@config.dest.inbox}..."
 
       inbox  = @config.dest.inbox
       mail_s = mail_item.meta['RFC822']
