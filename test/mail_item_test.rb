@@ -13,7 +13,7 @@ module InboxSync
 
     should have_readers :uid, :meta, :message
     should have_class_method :find
-    should have_instance_method :name
+    should have_instance_method :name, :stripped
 
     should "build a Mail Message from the raw IMAP attr data" do
       assert_kind_of ::Mail::Message, subject.message
@@ -32,6 +32,31 @@ module InboxSync
       assert_equal exp, subject.name
     end
 
+  end
+
+  class StrippedMailItemTests < MailItemTests
+    desc 'that has been stripped'
+    before do
+      @stripped = @item.stripped
+    end
+    subject { @stripped }
+
+    should "be single part plain text only" do
+      assert_equal 1, subject.message.parts.size
+    end
+
+    should "have no attachments" do
+      assert_equal 0, subject.message.attachments.size
+    end
+
+    should "prefix the body with a note saying that it is stripped down" do
+      pref = /\A\*\*\[inbox-sync\] stripped down to just plain text part\*\*/
+      assert_match pref, subject.message.parts.first.body.to_s
+    end
+
+    should "set its RFC822 to the stripped message string" do
+      assert_equal subject.meta['RFC822'], subject.message.to_s
+    end
   end
 
 end
