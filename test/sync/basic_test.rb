@@ -16,7 +16,7 @@ module InboxSync
     subject { @sync }
 
     should have_readers :config, :source_imap, :notify_smtp
-    should have_instance_methods :name, :logger, :logged_in?
+    should have_instance_methods :uid, :name, :logger, :logged_in?
     should have_instance_method  :configure, :setup, :teardown, :run, :notify
 
     should "configure using a block" do
@@ -38,11 +38,22 @@ module InboxSync
       assert_equal subject, subject.configure
     end
 
-    should "be named by its source" do
+  end
+
+  class BasicConfiguredSyncTests < BasicSyncTests
+    desc 'that has the basic configs'
+    before do
       subject.configure do
         source.host 'imap.test.com'
         source.login.user 'me@example.com'
       end
+    end
+
+    should "have a unique id" do
+      assert_equal "me@example.com:imap.test.com", subject.uid
+    end
+
+    should "be named by its source" do
       assert_equal "me@example.com (imap.test.com)", subject.name
     end
 

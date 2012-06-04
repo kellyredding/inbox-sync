@@ -28,7 +28,7 @@ Error
     end
 
     def subject
-      super("mail item sync error (#{@mail_item.uid}")
+      super("mail item sync error (#{@mail_item.uid}, #{@sync.uid})")
     end
 
     def body
@@ -39,8 +39,6 @@ Error
         gsub(':error_name', @error.class.name).
         gsub(':error_backtrace', @error.backtrace.join("\n  "))
     end
-
-
 
   end
 

@@ -21,6 +21,10 @@ module InboxSync
       @config.logger
     end
 
+    def uid
+      "#{@config.source.login.user}:#{@config.source.host}"
+    end
+
     def name
       "#{@config.source.login.user} (#{@config.source.host})"
     end
@@ -37,12 +41,14 @@ module InboxSync
     def setup
       logger.info "=== #{config_log_detail(@config.source)} sync started. ==="
 
+      @notify_smtp ||= setup_smtp(:notify, @config.notify)
       @config.validate!
       login if !logged_in?
     end
 
     def teardown
       logout if logged_in?
+      @source_imap = @notify_smtp = nil
       logger.info "=== #{config_log_detail(@config.source)} sync finished. ==="
     end
 
@@ -58,7 +64,7 @@ module InboxSync
           notify(Notice::SyncMailItemError.new(@notify_smtp, @config.notify, {
             :error => err,
             :mail_item => mail_item,
-            :sync => self,
+            :sync => self
           }))
         ensure
           # TODO: archive_on_source(mail_item)
@@ -80,16 +86,12 @@ module InboxSync
 
     def login
       @source_imap = login_imap(:source, @config.source)
-      @notify_smtp = setup_smtp(:notify, @config.notify)
-
       @logged_in = true
       true
     end
 
     def logout
       logout_imap(@source_imap, @config.source)
-      @source_imap = @notify_smtp = nil
-
       @logged_in = false
       true
     end
