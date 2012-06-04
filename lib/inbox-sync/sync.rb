@@ -58,7 +58,6 @@ module InboxSync
           response = send_to_dest(mail_item)
           dest_uid = parse_append_response_uid(response)
           logger.debug "** dest uid: #{dest_uid.inspect}"
-          archive_on_source(mail_item)
         rescue Exception => err
           log_error(err)
           notify(Notice::SyncMailItemError.new(@notify_smtp, @config.notify, {
@@ -67,7 +66,7 @@ module InboxSync
             :sync => self
           }))
         ensure
-          # TODO: archive_on_source(mail_item)
+          archive_on_source(mail_item)
           mail_item = nil
         end
       end

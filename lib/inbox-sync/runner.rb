@@ -32,7 +32,7 @@ module InboxSync
     end
 
     def stop
-      main_log "Stop signal - waiting any running syncs to finish."
+      main_log "Stop signal - waiting for any running syncs to finish."
       @shutdown = true
     end
 
@@ -56,8 +56,6 @@ module InboxSync
           run_syncs
         rescue Exception => err
           thread_log_error(err, :error)
-        # ensure
-        #   @run_lock = false
         end
 
         thread_log "...syncs finished"
