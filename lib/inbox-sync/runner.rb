@@ -4,79 +4,76 @@ module InboxSync
 
   class Runner
 
-    attr_reader :syncs, :timeout
+    attr_reader :syncs, :interval, :logger
 
     def initialize(*args)
       opts, syncs = [
         args.last.kind_of?(Hash) ? args.pop : {},
         args.flatten
       ]
-      timeout = opts[:timeout]
 
-      @syncs = syncs
+      @syncs = syncs || []
+      @interval = opts[:interval].kind_of?(Fixnum) ? opts[:interval] : -1
       @logger = opts[:logger] || Logger.new(STDOUT)
-      @timeout = timeout.kind_of?(Fixnum) ? timeout : -1
       @shutdown = false
-      @run_lock = false
+      @running_syncs_thread = nil
 
       Signal.trap('SIGINT', lambda{ self.stop })
       Signal.trap('SIGQUIT', lambda{ self.stop })
     end
 
     def start
-      main_log "Starting the runner."
+      startup
       loop do
         break if @shutdown
-        run_loop
+        loop_run
       end
-
-      main_log "Shutting down the runner"
       shutdown
     end
 
     def stop
-      main_log "Stop signal - waiting for current thread to finish."
+      main_log "Stop signal - waiting any running syncs to finish."
       @shutdown = true
     end
 
-    def shutdown
-      main_log "Shutting down."
+    protected
+
+    def startup
+      main_log "Starting up the runner."
     end
 
-    private
+    def shutdown
+      main_log "Shutting down the runner"
+    end
 
-    def run_loop
-      if @run_lock
-        main_log "Lock is taken."
-      else
-        main_log "Lock available, starting syncs in fresh thread."
-        @run_lock = true
+    def loop_run
+      main_log "Starting syncs in fresh thread."
 
-        Thread.new do
-          thread_log "starting syncs..."
+      @running_syncs_thread = Thread.new do
+        thread_log "starting syncs..."
 
-          begin
-            run_syncs
-          rescue Exception => err
-            thread_log_error(err, :error)
-          ensure
-            @run_lock = false
-          end
-
-          thread_log "...syncs finished"
+        begin
+          run_syncs
+        rescue Exception => err
+          thread_log_error(err, :error)
+        # ensure
+        #   @run_lock = false
         end
+
+        thread_log "...syncs finished"
       end
 
-
-      if @timeout < 0
-        main_log "run-once timeout - signaling stop"
+      if @interval < 0
+        main_log "run-once interval - signaling stop"
         stop
-        @timeout = 2
+        @interval = 0
       end
 
-      main_log "Sleeping for #{@timeout} seconds."
-      sleep(@timeout)
-      main_log "Woke from sleep."
+      main_log "Sleeping for #{@interval} seconds."
+      sleep(@interval)
+      main_log "Woke from sleep - waiting for running syncs thread to join..."
+      @running_syncs_thread.join
+      main_log "... running sycs thread joined."
     end
 
     def run_syncs
