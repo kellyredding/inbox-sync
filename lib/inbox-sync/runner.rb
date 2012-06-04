@@ -1,3 +1,5 @@
+require 'inbox-sync/notice/run_sync_error'
+
 module InboxSync
 
   class Runner
@@ -56,9 +58,7 @@ module InboxSync
           begin
             run_syncs
           rescue Exception => err
-            thread_log "#{err.message} (#{err.class.name})", :error
-            err.backtrace.each { |bt| thread_log bt.to_s, :error }
-            # TODO: notify
+            thread_log_error(err, :error)
           ensure
             @run_lock = false
           end
@@ -85,22 +85,30 @@ module InboxSync
           sync.setup
           sync.run
         rescue Exception => err
-          run_sync_handle_error(err)
+          run_sync_handle_error(sync, err)
         end
 
         begin
           sync.teardown
         rescue Exception => err
-          run_sync_handle_error(err)
+          run_sync_handle_error(sync, err)
         end
       end
       GC.start
     end
 
-    def run_sync_handle_error(err)
-      thread_log "#{err.message} (#{err.class.name})", :warn
-      err.backtrace.each { |bt| thread_log bt.to_s, :warn }
-      # TODO: notify
+    def run_sync_handle_error(sync, err)
+      thread_log_error(err)
+      notice = Notice::RunSyncError.new(sync.notify_smtp, sync.config.notify, {
+        :error => err,
+        :sync => sync
+      })
+      sync.notify(notice)
+    end
+
+    def thread_log_error(err, level=:warn)
+      thread_log "#{err.message} (#{err.class.name})", level
+      err.backtrace.each { |bt| thread_log bt.to_s, level }
     end
 
     def main_log(msg, level=:info)
