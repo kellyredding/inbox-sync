@@ -97,7 +97,7 @@ module InboxSync
     end
 
     def each_source_mail_item(runner=nil)
-      logger.info "* finding mail items in #{@config.source.inbox}..."
+      logger.info "* find: #{config_log_detail(@config.source)}, #{@config.source.inbox.inspect}..."
       items = MailItem.find(@source_imap)
       logger.info "* ...found #{items.size} mail items"
 

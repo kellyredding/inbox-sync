@@ -14,6 +14,7 @@ module InboxSync
     subject { @runner }
 
     should have_readers :syncs, :interval, :logger
+    should have_instance_methods :start, :stop, :shutdown?
 
     should "know its syncs" do
       assert_equal @syncs, subject.syncs
