@@ -18,67 +18,94 @@ module InboxSync
       @shutdown = false
       @running_syncs_thread = nil
 
-      Signal.trap('SIGINT', lambda{ self.stop })
-      Signal.trap('SIGQUIT', lambda{ self.stop })
+      Signal.trap('SIGINT',  lambda{ raise Interrupt, 'SIGINT'  })
+      Signal.trap('SIGQUIT', lambda{ raise Interrupt, 'SIGQUIT' })
+      Signal.trap('TERM',    lambda{ raise Interrupt, 'TERM'    })
     end
 
     def start
-      startup
+      startup!
       loop do
-        break if @shutdown
         loop_run
+        break if shutdown?
       end
-      shutdown
+      shutdown!
     end
 
     def stop
-      main_log "Stop signal - waiting for any running syncs to finish."
-      @shutdown = true
+      if @shutdown != true
+        main_log "Stop signal - waiting for any running syncs to finish."
+        @shutdown = true
+      end
+    end
+
+    def shutdown?
+      !!@shutdown
     end
 
     protected
 
-    def startup
+    def startup!
       main_log "Starting up the runner."
-    end
-
-    def shutdown
-      main_log "Shutting down the runner"
-    end
-
-    def loop_run
-      main_log "Starting syncs in fresh thread."
-
-      @running_syncs_thread = Thread.new do
-        thread_log "starting syncs..."
-
-        begin
-          run_syncs
-        rescue Exception => err
-          thread_log_error(err, :error)
-        end
-
-        thread_log "...syncs finished"
-      end
-
       if @interval < 0
         main_log "run-once interval - signaling stop"
         stop
         @interval = 0
       end
+    end
 
-      main_log "Sleeping for #{@interval} seconds."
-      sleep(@interval)
-      main_log "Woke from sleep - waiting for running syncs thread to join..."
-      @running_syncs_thread.join
-      main_log "... running sycs thread joined."
+    def shutdown!
+      main_log "Shutting down the runner"
+    end
+
+    def loop_run
+      begin
+        main_log "Starting syncs in fresh thread."
+        @running_syncs_thread = Thread.new { run_syncs_thread }
+
+        if @interval > 0
+          main_log "Sleeping for #{@interval} second interval."
+          sleep(@interval)
+          main_log "Woke from sleep"
+        end
+      rescue Interrupt => err
+        stop
+      ensure
+        join_syncs_thread
+      end
+    end
+
+    def join_syncs_thread
+      begin
+        if @running_syncs_thread
+          main_log "Waiting for running syncs thread to join..."
+          @running_syncs_thread.join
+          main_log "... running syncs thread has joined."
+        end
+        @running_syncs_thread = nil
+      rescue Interrupt => err
+        stop
+        join_syncs_thread
+      end
+    end
+
+    def run_syncs_thread
+      thread_log "starting syncs..."
+
+      begin
+        run_syncs
+      rescue Exception => err
+        thread_log_error(err, :error)
+      end
+
+      thread_log "...syncs finished"
     end
 
     def run_syncs
       @syncs.each do |sync|
         begin
           sync.setup
-          sync.run
+          sync.run(self)
         rescue Exception => err
           run_sync_handle_error(sync, err)
         end
