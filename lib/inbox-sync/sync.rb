@@ -159,6 +159,8 @@ module InboxSync
 
       mark_as_deleted(@source_imap, mail_item.uid)
 
+      expunge_imap(@source_imap, @config.source)
+
       @source_imap.expunge
     end
 
@@ -190,12 +192,16 @@ module InboxSync
         raise Net::IMAP::NoResponseError, "#{named} imap: #{err.message}"
       end
 
-      if config.expunge
-        logger.debug "* EXPUNGE #{config.inbox.inspect}: #{config_log_detail(config)}"
-        named_imap.expunge
-      end
+      expunge_imap(named_imap, config)
 
       named_imap
+    end
+
+    def expunge_imap(imap, config)
+      if config.expunge
+        logger.debug "* EXPUNGE #{config.inbox.inspect}: #{config_log_detail(config)}"
+        imap.expunge
+      end
     end
 
     def logout_imap(imap, config)
