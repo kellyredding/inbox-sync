@@ -52,8 +52,9 @@ module InboxSync
       logger.info "=== #{config_log_detail(@config.source)} sync finished. ==="
     end
 
-    def run
-      each_source_mail_item do |mail_item|
+    def run(runner=nil)
+      return if runner && runner.shutdown?
+      each_source_mail_item(runner) do |mail_item|
         begin
           response = send_to_dest(mail_item)
           dest_uid = parse_append_response_uid(response)
@@ -95,11 +96,16 @@ module InboxSync
       true
     end
 
-    def each_source_mail_item
+    def each_source_mail_item(runner=nil)
+      logger.info "* finding mail items in #{@config.source.inbox}..."
       items = MailItem.find(@source_imap)
-      logger.info "* found #{items.size} mails"
+      logger.info "* ...found #{items.size} mail items"
 
       items.each do |mail_item|
+        if runner && runner.shutdown?
+          logger.info "* the runner has been shutdown - aborting the sync"
+          break
+        end
         logger.debug "** #{mail_item.inspect}"
         yield mail_item
       end
