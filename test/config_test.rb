@@ -1,36 +1,40 @@
 require 'assert'
 require 'ns-options/assert_macros'
 
-require 'inbox-syncro/config'
+require 'inbox-sync/config'
 
-module InboxSyncro
+module InboxSync
 
   class ConfigTests < Assert::Context
     include NsOptions::AssertMacros
 
     before do
-      @config = InboxSyncro::Config.new
+      @config = InboxSync::Config.new
     end
     subject { @config }
 
-    should have_option :source, InboxSyncro::Config::IMAPConfig, {
+    should have_option :source, InboxSync::Config::IMAPConfig, {
       :default => {},
       :required => true
     }
 
-    should have_option :dest,   InboxSyncro::Config::IMAPConfig, {
+    should have_option :dest,   InboxSync::Config::IMAPConfig, {
       :default => {},
       :required => true
     }
 
-    should have_option :notify, InboxSyncro::Config::SMTPConfig, {
+    should have_option :notify, InboxSync::Config::SMTPConfig, {
       :default => {},
       :required => true
     }
 
     should have_option :archive_folder, {
-      :default => "Forwarded",
-      :required => true
+      :default => "Archived"
+    }
+
+    should have_option :logger, Logger, {
+      :required => true,
+      :default => STDOUT
     }
 
     should have_instance_method  :validate!
@@ -109,7 +113,7 @@ module InboxSyncro
     end
 
     should "be built from set of args" do
-      cred = InboxSyncro::Config::Credentials.new 'me', 'secret'
+      cred = InboxSync::Config::Credentials.new 'me', 'secret'
 
       assert_equal 'me',     cred.user
       assert_equal 'secret', cred.pw
@@ -132,7 +136,7 @@ module InboxSyncro
       :required => true
     }
 
-    should have_option :login, InboxSyncro::Config::Credentials, {
+    should have_option :login, InboxSync::Config::Credentials, {
       :default => {},
       :required => true
     }
@@ -197,18 +201,18 @@ module InboxSyncro
     should have_option :host, :required => true
 
     should have_option :port, {
-      :default => 587,
+      :default => 25,
       :required => true
     }
 
     should have_option :tls,  NsOptions::Boolean, {
-      :default => true,
+      :default => false,
       :required => true
     }
 
     should have_option :helo, :required => true
 
-    should have_option :login, InboxSyncro::Config::Credentials, {
+    should have_option :login, InboxSync::Config::Credentials, {
       :default => {},
       :required => true
     }
@@ -218,7 +222,9 @@ module InboxSyncro
       :required => true
     }
 
-    should have_option :to_addrs, :required => true
+    should have_option :from_addr, :required => true
+
+    should have_option :to_addr, :required => true
 
     should have_instance_method  :validate!
 
@@ -264,16 +270,28 @@ module InboxSyncro
       end
     end
 
-    should "complain if missing :to_addrs config" do
+    should "complain if missing :from_addr config" do
       assert_raises ArgumentError do
-        subject.to_addrs = nil
+        subject.from_addr = nil
         subject.validate!
       end
     end
 
-    should "complain if empty :to_addrs config" do
+    should "complain if missing :to_addr config" do
       assert_raises ArgumentError do
-        subject.to_addrs = []
+        subject.to_addr = nil
+        subject.validate!
+      end
+    end
+
+    should "complain if empty addrs configs" do
+      assert_raises ArgumentError do
+        subject.from_addr = ""
+        subject.validate!
+      end
+
+      assert_raises ArgumentError do
+        subject.to_addr = ""
         subject.validate!
       end
     end

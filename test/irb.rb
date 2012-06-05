@@ -6,4 +6,4 @@ require 'assert/setup'
 
 # put any IRB setup code here
 
-require 'inbox-syncro'
+require 'inbox-sync'

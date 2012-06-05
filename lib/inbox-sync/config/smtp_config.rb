@@ -1,20 +1,21 @@
 require 'ns-options'
 require 'ns-options/boolean'
-require 'inbox-syncro/config/credentials'
+require 'inbox-sync/config/credentials'
 
-module InboxSyncro; end
-class InboxSyncro::Config
+module InboxSync; end
+class InboxSync::Config
 
   class SMTPConfig
     include NsOptions::Proxy
 
     opt :host, :required => true
-    opt :port, :default => 587, :required => true
-    opt :tls,  NsOptions::Boolean, :default => true, :required => true
+    opt :port, :default => 25, :required => true
+    opt :tls,  NsOptions::Boolean, :default => false, :required => true
     opt :helo, :required => true
     opt :login, Credentials, :required => true, :default => {}
     opt :authtype, :default => :login, :required => true
-    opt :to_addrs, :required => true
+    opt :from_addr, :required => true
+    opt :to_addr, :required => true
 
     def validate!
       if !required_set?
@@ -23,6 +24,7 @@ class InboxSyncro::Config
 
       login.validate!
     end
+
   end
 
 end
