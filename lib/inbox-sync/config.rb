@@ -1,8 +1,9 @@
+require 'logger'
 require 'ns-options'
-require 'inbox-syncro/config/imap_config'
-require 'inbox-syncro/config/smtp_config'
+require 'inbox-sync/config/imap_config'
+require 'inbox-sync/config/smtp_config'
 
-module InboxSyncro
+module InboxSync
 
   class Config
     include NsOptions::Proxy
@@ -11,7 +12,8 @@ module InboxSyncro
     opt :dest,   IMAPConfig, :required => true, :default => {}
     opt :notify, SMTPConfig, :required => true, :default => {}
 
-    opt :archive_folder, :default => 'Forwarded', :required => true
+    opt :archive_folder, :default => 'Archived'
+    opt :logger, Logger, :required => true, :default => STDOUT
 
     def validate!
       if !required_set?

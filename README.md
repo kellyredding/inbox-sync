@@ -1,4 +1,4 @@
-# InboxSyncro
+# InboxSync
 
 Move messages from one inbox to another.  Useful when server-side email forwarding is not an option.  Can apply rules to messages as they are being moved.  Run on-demand, on a schedule, or as a daemon.
 
@@ -6,7 +6,7 @@ Move messages from one inbox to another.  Useful when server-side email forwardi
 
 Add this line to your application's Gemfile:
 
-    gem 'inbox-syncro'
+    gem 'inbox-sync'
 
 And then execute:
 
@@ -14,27 +14,27 @@ And then execute:
 
 Or install it yourself as:
 
-    $ gem install inbox-syncro
+    $ gem install inbox-sync
 
 ## Usage
 
-It should be fairly straight-forward: create and configure a syncro then run it.  This will move all messages in the `source` inbox to the `dest` inbox.
+It should be fairly straight-forward: create and configure a sync then run it.  This will move all messages in the `source` inbox to the `dest` inbox.
 
-### Create your Syncro
+### Create your Sync
 
 ```ruby
-sync = InboxSyncro.new
+sync = InboxSync.new
 ```
 
 ### Configure it
 
 ```ruby
 # manually set configs
-sync.source.host = 'imap.source-host.com'
+sync.config.source.host = 'imap.source-host.com'
 
 # or use a more DSL like approach
-sync.source.login.user 'me'
-sync.source.login.pw   'secret'
+sync.config.source.login.user 'me'
+sync.config.source.login.pw   'secret'
 
 # use a configure block, if you like
 sync.configure do
@@ -46,10 +46,10 @@ end
 ### Run it
 
 ```ruby
-InboxSyncro.run(sync)
+InboxSync.run(sync, :timeout => 5)
 ```
 
-InboxSyncro uses IMAP to query the source inbox, process its messages, append them to the dest inbox, and archive them on the source.
+InboxSync uses IMAP to query the source inbox, process its messages, append them to the dest inbox, and archive them on the source.
 
 ## Configs
 
@@ -73,8 +73,8 @@ IMAP settings for the destination inbox.  Has the some attributes and defaults a
 SMTP settings to send notifications with.
 
 * *host*: eg. `'smtp.some-domain.com'`.
-* *port*: defaults to `587`.
-* *tls*: whethe to use TLS encryption.  defaults to `true`.
+* *port*: defaults to `25`.
+* *tls*: whethe to use TLS encryption.  defaults to `false`.
 * *helo*: the helo domain to send with.
 * *login*: credentials (user, pw).
 * *authtype*: defaults to `:login`.
@@ -82,7 +82,11 @@ SMTP settings to send notifications with.
 
 ### `archive_folder`
 
-The folder on the source to create and archive (move) source inbox messages to when processing is complete.  Defaults to `"Forwarded"`.
+The folder on the source to create and archive (move) source inbox messages to when processing is complete.  Defaults to `"Forwarded"`.  Set to `nil` to disable archiving on the source and delete the messages after processing.
+
+### `logger`
+
+A logger to use.  Defaults to ruby's `Logger` on stdout.
 
 ## Rules
 
@@ -91,6 +95,60 @@ TODO
 ## Notifications
 
 TODO
+
+## Running
+
+InboxSync provides a `Runner` class that will loop indefinitely, running syncs every `:timeout` seconds.  Stick it in a daemon, a rake task, a CLI, or whatever depending on how you want to invoke it.  Here is an example using it in a basic ruby script:
+
+```ruby
+require 'inbox-sync'
+
+sync = InboxSync::Sync.new.configure do
+  source.host  'imap.gmail.com'
+  source.port  993
+  source.ssl   'Yes'
+  source.login 'joetest@kellyredding.com', 'joetest1'
+
+  dest.host  'imap.gmail.com'
+  dest.port  993
+  dest.ssl   'Yes'
+  dest.login 'suetest@kellyredding.com', 'suetest1'
+
+  notify.host  'smtp.gmail.com'
+  notify.port  587
+  notify.tls   'Yes'
+  notify.helo  'gmail.com'
+  notify.login 'suetest@kellyredding.com', 'suetest1'
+  notify.to_addrs 'suetest@kellyredding.com'
+
+  logger Logger.new('log/tests.log')
+end
+
+InboxSync.run(sync, :timeout => 20)
+```
+
+The `InboxSync.run` method is just a macro for creating a runner and calling its `start` method.
+
+```ruby
+InboxSync::Runner.new(sync, :timeout => 5).start
+```
+
+By default, it will log to `STDOUT` but accepts a `:logger` option to override this.
+
+```ruby
+InboxSync::Runner.new(sync, {
+  :timeout => 5,
+  :logger => Logger.new('/path/to/log.log')
+})
+```
+
+You can pass any number of syncs to run.  Each `:timeout` period, it will run them sequentially:
+
+```ruby
+InboxSync::Runner.new(sync1, sync2, sync3, :timeout => 5).start
+```
+
+The runner traps `SIGINT` and `SIGQUIT` and will shutdown nicely once any in-progress syncs have finished.
 
 ## Contributing
 
