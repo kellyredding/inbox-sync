@@ -134,9 +134,9 @@ module InboxSync
       logger.info "** Appending #{desc}#{mail_item.uid} to dest #{@config.dest.inbox}..."
 
       inbox  = @config.dest.inbox
-      mail_s = mail_item.meta['RFC822']
+      mail_s = mail_item.rfc822
       flags  = []
-      date   = mail_item.meta['INTERNALDATE']
+      date   = mail_item.internal_date
 
       using_dest_imap do |imap|
         imap.append(inbox, mail_s, flags, date)
