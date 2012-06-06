@@ -41,7 +41,10 @@ class Assert::Context
   }
 
   def test_mail_item
-    InboxSync::MailItem.new('12345', TEST_MAIL_DATA['RFC822'], TEST_MAIL_DATA['INTERNALDATE'])
+    InboxSync::MailItem.new('dummy_imap', '12345', {
+      :rfc822 => TEST_MAIL_DATA['RFC822'],
+      :internal_date => TEST_MAIL_DATA['INTERNALDATE']
+    })
   end
 
   def setup_sync_mail_item
@@ -64,9 +67,9 @@ class Assert::Context
 
     # append the test mail on the source imap
     inbox  = sync.config.source.inbox
-    mail_s = test_mail_item.meta['RFC822']
+    mail_s = test_mail_item.rfc822
     flags  = []
-    date   = test_mail_item.meta['INTERNALDATE']
+    date   = test_mail_item.internal_date
 
     sync.source_imap.append(inbox, mail_s, flags, date)
   end

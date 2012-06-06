@@ -11,20 +11,20 @@ module InboxSync
     end
     subject { @item }
 
-    should have_readers :uid, :meta, :message
+    should have_readers :imap, :uid
     should have_class_method :find
-    should have_instance_method :name, :stripped
+    should have_instance_methods :name, :meta, :stripped
+    should have_instance_methods :rfc822, :rfc822=
+    should have_instance_methods :internal_date, :internal_date=
+    should have_instance_methods :message, :message=
 
     should "build a Mail Message from the raw IMAP attr data" do
       assert_kind_of ::Mail::Message, subject.message
     end
 
-    should "provide the raw IMAP attrs in the meta hash" do
-      assert_includes 'RFC822', subject.meta
-      assert_includes 'INTERNALDATE', subject.meta
-
-      assert_equal TEST_MAIL_DATA['RFC822'], subject.meta['RFC822']
-      assert_equal TEST_MAIL_DATA['INTERNALDATE'], subject.meta['INTERNALDATE']
+    should "provide the IMAP rfc822 and internal_date" do
+      assert_equal TEST_MAIL_DATA['RFC822'], subject.rfc822
+      assert_equal TEST_MAIL_DATA['INTERNALDATE'], subject.internal_date
     end
 
     should "be named by its uid, from, subject, and date" do
@@ -55,7 +55,7 @@ module InboxSync
     end
 
     should "set its RFC822 to the stripped message string" do
-      assert_equal subject.meta['RFC822'], subject.message.to_s
+      assert_equal subject.rfc822, subject.message.to_s
     end
   end
 
