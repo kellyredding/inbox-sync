@@ -5,32 +5,51 @@ module InboxSync
   class MailItem
 
     def self.find(imap)
-      imap.uid_search(['ALL']).
-        map do |uid|
-          [uid, imap.uid_fetch(uid, ['RFC822', 'INTERNALDATE']).first]
-        end.
-        map do |uid_meta|
-          self.new(
-            uid_meta.first,
-            uid_meta.last.attr['RFC822'],
-            uid_meta.last.attr["INTERNALDATE"]
-          )
-        end
+      imap.uid_search(['ALL']).map do |uid|
+        self.new(imap, uid)
+      end
     end
 
-    attr_reader :uid, :meta, :message
+    attr_reader :imap, :uid
 
-    def initialize(uid, rfc822, internal_date)
+    def initialize(imap, uid, attrs={})
+      @imap = imap
       @uid = uid
-      @meta = {
-        'RFC822' => rfc822,
-        'INTERNALDATE' => internal_date
-      }
-      @message = ::Mail.new(rfc822)
+      @rfc822 = attrs[:rfc822]
+      @internal_date = attrs[:internal_date]
+      @message = attrs[:message]
     end
 
     def name
-      "[#{@uid}] #{@message.from}: #{@message.subject.inspect} (#{time_s(@message.date)})"
+      @name ||= "[#{self.uid}] #{self.message.from}: #{self.message.subject.inspect} (#{time_s(self.message.date)})"
+    end
+
+    def meta
+      @meta ||= @imap.uid_fetch(self.uid, ['RFC822', 'INTERNALDATE']).first
+    end
+
+    def rfc822
+      @rfc822 ||= self.meta.attr['RFC822']
+    end
+
+    def rfc822=(value)
+      @rfc822 = value
+    end
+
+    def internal_date
+      @internal_date ||= self.meta.attr['INTERNALDATE']
+    end
+
+    def internal_date=(value)
+      @internal_date = value
+    end
+
+    def message
+      @message ||= ::Mail.new(self.rfc822)
+    end
+
+    def message=(value)
+      @message = value
     end
 
     # Returns a stripped down version of the mail item
@@ -40,21 +59,25 @@ module InboxSync
     # This implies that stripped down mail items have no attachments.
 
     def stripped
-      @stripped ||= strip_down(MailItem.new(
-        self.uid,
-        self.meta['RFC822'],
-        self.meta["INTERNALDATE"]
-      ))
+      @stripped ||= strip_down(copy_mail_item(self))
     end
 
     def inspect
-      "#<#{self.class}:#{'0x%x' % (self.object_id << 1)}: @uid=#{@uid.inspect}, from=#{@message.from.inspect}, subject=#{@message.subject.inspect}, 'INTERNALDATE'=#{@meta['INTERNALDATE'].inspect}>"
+      "#<#{self.class}:#{'0x%x' % (self.object_id << 1)}: @uid=#{self.uid.inspect}, from=#{self.message.from.inspect}, subject=#{self.message.subject.inspect}, 'INTERNALDATE'=#{self.internal_date.inspect}>"
     end
 
     private
 
     def time_s(datetime)
       datetime.strftime("%a %b %-d %Y, %I:%M %p")
+    end
+
+    def copy_mail_item(item)
+      MailItem.new(item.imap, item.uid, {
+        :rfc822 => item.rfc822,
+        :internal_date => item.internal_date,
+        :message => item.message
+      })
     end
 
     def strip_down(mail_item)
@@ -64,7 +87,8 @@ module InboxSync
           !part.content_type.match(/text\/plain/)
         end
         message.parts.first.body = strip_down_body_s(message.parts.first.body)
-        mail_item.meta['RFC822'] = message.to_s
+        mail_item.message = message
+        mail_item.rfc822 = message.to_s
       end
       mail_item
     end
