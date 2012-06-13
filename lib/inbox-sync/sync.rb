@@ -188,7 +188,7 @@ module InboxSync
       begin
         named_imap.login(config.login.user, config.login.pw)
       rescue Net::IMAP::NoResponseError => err
-        raise Net::IMAP::NoResponseError, "#{named} imap #{config.login.to_hash.inspect}: #{err.message}"
+        raise Net::IMAP::NoResponseError, "#{named} imap {:host => #{config.host}, :user => #{config.login.user}}: #{err.message}"
       end
 
       logger.debug "* SELECT #{config.inbox.inspect}: #{config_log_detail(config)}"
