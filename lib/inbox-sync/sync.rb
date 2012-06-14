@@ -56,6 +56,7 @@ module InboxSync
       return if runner && runner.shutdown?
       each_source_mail_item(runner) do |mail_item|
         begin
+          logger.debug "** #{mail_item.inspect}"
           response = send_to_dest(mail_item)
           dest_uid = parse_append_response_uid(response)
           logger.debug "** dest uid: #{dest_uid.inspect}"
@@ -106,7 +107,6 @@ module InboxSync
           logger.info "* the runner has been shutdown - aborting the sync"
           break
         end
-        logger.debug "** #{mail_item.inspect}"
         yield mail_item
       end
       items = nil

@@ -25,7 +25,13 @@ module InboxSync
     end
 
     def meta
-      @meta ||= @imap.uid_fetch(self.uid, ['RFC822', 'INTERNALDATE']).first
+      @meta ||= begin
+        fetch_data = @imap.uid_fetch(self.uid, ['RFC822', 'INTERNALDATE'])
+        if fetch_data.nil? || fetch_data.empty?
+          raise "error fetching data for uid '#{self.uid}'"
+        end
+        fetch_data.first
+      end
     end
 
     def rfc822
@@ -69,7 +75,11 @@ module InboxSync
     private
 
     def time_s(datetime)
-      datetime.strftime("%a %b %-d %Y, %I:%M %p")
+      if datetime && datetime.respond_to?(:strftime)
+        datetime.strftime("%a %b %-d %Y, %I:%M %p")
+      else
+        datetime
+      end
     end
 
     def copy_mail_item(item)
