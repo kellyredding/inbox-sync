@@ -37,21 +37,37 @@ module InboxSync
 
     def match!(filters)
       filters.each do |filter|
-        instance_eval(filter.actions) if filter.match?(@message)
+        instance_eval(&filter.actions) if filter.match?(@message)
       end
     end
 
-    def apply!(imap)
-      apply_flags(imap)
-      apply_copies(imap)
+    def apply!(imap, uid)
+      apply_flags(imap, uid)
+      apply_copies(imap, uid)
+
+      # force make the dest message unread if not explicitly marked :Seen
+      if !flags.include?(:Seen)
+        imap.uid_store(uid, "-FLAGS", [:Seen])
+      end
     end
 
     protected
 
-    def apply_flags(imap)
+    def apply_flags(imap, uid)
+      if !flags.empty?
+        imap.uid_store(uid, "+FLAGS", flags)
+      end
     end
 
-    def apply_copies(imap)
+    def apply_copies(imap, uid)
+      copies.each do |folder|
+        begin
+          imap.uid_copy(uid, folder)
+        rescue Net::IMAP::NoResponseError
+          imap.create(folder)
+          retry
+        end
+      end
     end
 
     private

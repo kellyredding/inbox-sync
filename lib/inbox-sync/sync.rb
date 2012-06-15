@@ -150,9 +150,12 @@ module InboxSync
         dest_mail_item = MailItem.new(imap, dest_uid)
         logger.debug "** #{dest_mail_item.inspect}"
 
-        actions = FilterActions.new(dest_mail_item.message, logger)
+        actions = FilterActions.new(dest_mail_item.message)
         actions.match!(@config.filters)
-        actions.apply!(imap)
+        logger.debug "** flag as: #{actions.flags.inspect}"
+        logger.debug "** copy to: #{actions.copies.inspect}"
+
+        actions.apply!(imap, dest_uid)
       end
     end
 
@@ -247,7 +250,7 @@ module InboxSync
     # #<struct Net::IMAP::TaggedResponse tag="RUBY0012", name="OK", data=#<struct Net::IMAP::ResponseText code=#<struct Net::IMAP::ResponseCode name="APPENDUID", data="6 9">, text=" (Success)">, raw_data="RUBY0012 OK [APPENDUID 6 9] (Success)\r\n">
     # (here '9' is the UID)
     def parse_append_response_uid(response)
-      response.data.code.data.split(/\s+/).last
+      response.data.code.data.split(/\s+/).last.to_i
     end
 
     def mark_as_seen(imap, uid)

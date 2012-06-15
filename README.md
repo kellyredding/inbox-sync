@@ -201,9 +201,9 @@ The second step in defining a filter is what to do with a message if it matches.
 
 * `copy_to`: copies the message to a given folder.  will create the folder if necessary.  aliased as `label`.
 * `move_to`: moves the message to a given folder.  will create the folder if necessary.  aliased as `archive_to`.
-* `mark_important`: marks the message as important
 * `mark_read`: marks the message as read (flag :Seen)
 * `delete`: deletes the message (flag :Deleted)
+* `flag`: apply a custom flag
 
 Actions are specified using a block.  If a message matches the filter conditions, the filters actions will be applied to the message on the destination.  In the case multiplie filters match the message, actions are aggregated and applied once after all filters have been processed.
 
@@ -219,9 +219,8 @@ end
 
 Actions are applied according to precedence rules.  They go something like this:
 
-* markings first - they will carry over as messages are copied/moved.
+* flags first - they will carry over as messages are copied/moved.
 * copies/moves next - moves are just a macro for copy-then-delete
-* deletes first - deleting a message negates any other actions
 
 This order ensures the message is available for all actions needed.
 
