@@ -39,8 +39,9 @@ module InboxSync
 
     alias_method :like, :contains
     alias_method :includes, :contains
-    alias_method :sw, :starts_with
-    alias_method :ew, :ends_with
+    alias_method :inc, :includes
+    alias_method :sw,  :starts_with
+    alias_method :ew,  :ends_with
 
   end
 

@@ -43,7 +43,7 @@ module InboxSync
     }
 
     should have_instance_methods :validate!, :filter
-    should have_instance_methods :contains, :like, :includes
+    should have_instance_methods :contains, :like, :includes, :inc
     should have_instance_methods :starts_with, :ends_with, :sw, :ew
 
     should "complain if missing :source config" do
