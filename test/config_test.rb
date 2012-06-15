@@ -37,7 +37,14 @@ module InboxSync
       :default => STDOUT
     }
 
-    should have_instance_method  :validate!
+    should have_option :filters, {
+      :default => [],
+      :required => true
+    }
+
+    should have_instance_methods :validate!, :filter
+    should have_instance_methods :contains, :like, :includes, :inc
+    should have_instance_methods :starts_with, :ends_with, :sw, :ew
 
     should "complain if missing :source config" do
       assert_raises ArgumentError do

@@ -2,6 +2,7 @@ require 'logger'
 require 'ns-options'
 require 'inbox-sync/config/imap_config'
 require 'inbox-sync/config/smtp_config'
+require 'inbox-sync/config/filter'
 
 module InboxSync
 
@@ -14,6 +15,11 @@ module InboxSync
 
     opt :archive_folder, :default => 'Archived'
     opt :logger, Logger, :required => true, :default => STDOUT
+    opt :filters, :default => [], :required => true
+
+    def filter(*args, &block)
+      filters << Filter.new(*args, &block)
+    end
 
     def validate!
       if !required_set?
@@ -24,6 +30,18 @@ module InboxSync
       dest.validate!
       notify.validate!
     end
+
+    protected
+
+    def contains(value);    /.*#{value}.*/; end
+    def starts_with(value); /\A#{value}.*/; end
+    def ends_with(value);   /.*#{value}\Z/; end
+
+    alias_method :like, :contains
+    alias_method :includes, :contains
+    alias_method :inc, :includes
+    alias_method :sw,  :starts_with
+    alias_method :ew,  :ends_with
 
   end
 
