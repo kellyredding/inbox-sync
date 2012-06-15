@@ -1,6 +1,6 @@
 # InboxSync
 
-Move messages from one inbox to another.  Useful when server-side email forwarding is not an option.  (TODO) Can apply filters to messages as they are being moved.  Run on-demand, on a schedule, or as a daemon.
+Move messages from one inbox to another.  Useful when server-side email forwarding is not an option.  Can apply filters to messages as they are being moved.  Run on-demand, on a schedule, or as a daemon.
 
 ## Installation
 
@@ -20,7 +20,7 @@ Or install it yourself as:
 
 InboxSync uses IMAP to query a source inbox, process its messages, append them to a destination inbox, and archive them on the source.  It logs each step in the process and will send notification emails when something goes wrong.
 
-(TODO) InboxSync provides a framework for defining destination filters for post-sync mail processing (ie moving/archiving, copying/labeling, deletion, etc).
+InboxSync provides a framework for defining destination filters for post-sync mail processing (ie moving/archiving, copying/labeling, deletion, etc).
 
 InboxSync provides a basic ruby runner class to handle polling the source on an interval and running the configured sync(s).  You can call it in any number of ways: in a script, from a cron, as a daemon, or as part of a larger system.
 
@@ -158,7 +158,75 @@ The runner traps `SIGINT` and `SIGQUIT` and will shutdown nicely once any in-pro
 
 ## Filter Framework
 
-TODO
+You can configure filters for your syncs.  Filters are applied to destination messages after they have been appended to the inbox.
+
+```ruby
+sync = InboxSync.new.configure do
+
+  # conditions to match on
+  filter(:subject => contains('hi there')) do
+    # actions to perform
+    copy_to 'Some-Folder'
+  end
+
+end
+```
+
+### Conditions
+
+The first step in defining a filter is specifying the match conditions.  You can filter on any attribute of the message (`Mail::Message`).  The filter conditions are specified as a hash, where the keys are the attributes to match on and the values are what to match with.
+
+The default comparison is equals (`==`).  You have a few helpers for other comparisons at your disposal as well:
+
+* `contains`: converts to `/.*#{value}.*/` and matches.  aliased as `like` and `includes`.
+* `starts_with`: converts your value to `/\A#{value}.*/` and matches.  aliased as `sw`.
+* `ends_with`: converts your value to `/.*#{value}\Z/` and matches.  aliased as `ew`.
+* pass a custom regex: it will be matched
+
+```ruby
+sync = InboxSync.new.configure do
+
+  filter(:subject => 'hi there you')     { ... }
+  filter(:subject => contains('there'))  { ... }
+  filter(:subject => starts_with('hi')   { ... }
+  filter(:subject => ends_with('you'))   { ... }
+  filter(:subject => /\Ahi\s+.+\s+you\Z/ { ... }
+
+end
+```
+
+### Actions
+
+The second step in defining a filter is what to do with a message if it matches.  InboxSync provides a set of actions that can be performed on a message.
+
+* `copy_to`: copies the message to a given folder.  will create the folder if necessary.  aliased as `label`.
+* `move_to`: moves the message to a given folder.  will create the folder if necessary.  aliased as `archive_to`.
+* `mark_important`: marks the message as important
+* `mark_read`: marks the message as read
+* `mark_spam`: marks the message as spam
+* `archive`: will archive (removed from the inbox but not deleted).
+* `delete`: deletes the message
+
+Actions are specified using a block.  If a message matches the filter conditions, the filters actions will be applied to the message on the destination.  In the case multiplie filters match the message, actions are aggregated and applied once after all filters have been processed.
+
+```ruby
+sync = InboxSync.new.configure do
+
+  filter(...) { copy_to 'Something' }
+  filter(...) { move_to 'Somewhere' }
+  filter(...) { mark_read; archive }
+
+end
+```
+
+Actions are applied according to precedence rules.  They go something like this:
+
+* deletes first - deleting a message negates any other actions
+* markings next - they will carry over as messages are copied/moved.
+* copies/moves next - moves are just a macro for copy-then-archive
+* archive last - after all other actions are applied, archive the message if needed
+
+This order ensures the message is available for all actions needed.
 
 ## Error Handling
 
