@@ -2,6 +2,7 @@ require 'net/imap'
 require 'net/smtp'
 
 require 'inbox-sync/config'
+require 'inbox-sync/filter_actions'
 require 'inbox-sync/notice/sync_mail_item_error'
 
 module InboxSync
@@ -59,7 +60,7 @@ module InboxSync
           logger.debug "** #{mail_item.inspect}"
           response = send_to_dest(mail_item)
           dest_uid = parse_append_response_uid(response)
-          logger.debug "** dest uid: #{dest_uid.inspect}"
+          apply_dest_filters(dest_uid)
         rescue Exception => err
           log_error(err)
           notify(Notice::SyncMailItemError.new(@notify_smtp, @config.notify, {
@@ -143,6 +144,21 @@ module InboxSync
       end
     end
 
+    def apply_dest_filters(dest_uid)
+      logger.info "** applying filters for dest uid: #{dest_uid.inspect}"
+      using_dest_imap do |imap|
+        dest_mail_item = MailItem.new(imap, dest_uid)
+        logger.debug "** #{dest_mail_item.inspect}"
+
+        actions = FilterActions.new(dest_mail_item.message)
+        actions.match!(@config.filters)
+        logger.debug "** flag as: #{actions.flags.inspect}"
+        logger.debug "** copy to: #{actions.copies.inspect}"
+
+        actions.apply!(imap, dest_uid)
+      end
+    end
+
     def archive_on_source(mail_item)
       folder = @config.archive_folder
       if !folder.nil? && !folder.empty?
@@ -164,10 +180,7 @@ module InboxSync
       end
 
       mark_as_deleted(@source_imap, mail_item.uid)
-
       expunge_imap(@source_imap, @config.source)
-
-      @source_imap.expunge
     end
 
     def using_dest_imap
@@ -237,7 +250,7 @@ module InboxSync
     # #<struct Net::IMAP::TaggedResponse tag="RUBY0012", name="OK", data=#<struct Net::IMAP::ResponseText code=#<struct Net::IMAP::ResponseCode name="APPENDUID", data="6 9">, text=" (Success)">, raw_data="RUBY0012 OK [APPENDUID 6 9] (Success)\r\n">
     # (here '9' is the UID)
     def parse_append_response_uid(response)
-      response.data.code.data.split(/\s+/).last
+      response.data.code.data.split(/\s+/).last.to_i
     end
 
     def mark_as_seen(imap, uid)
