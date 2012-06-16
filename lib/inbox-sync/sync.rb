@@ -61,7 +61,7 @@ module InboxSync
     def mail_item_groups
       num_groups = @config.max_threads
       groups = []
-      num_groups.times { groups << Runner::MailItemGroup.new(self) }
+      num_groups.times { groups << MailItemGroup.new(self) }
       get_mail_items.each_with_index do |item, i|
         groups[i % num_groups].add(item)
       end
