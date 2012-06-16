@@ -95,6 +95,10 @@ The (optional) folder on the source to create and archive (move) source inbox me
 
 A logger to use.  Defaults to ruby's `Logger` on `STDOUT`.
 
+### `max_threads`
+
+This is the number of threads to sync mail items with.  Each time a sync is run, the number of mail items that need to sync'd will be broken into `max_threads` groups and each group will sync its mail items in its own thread.  The default is `1` which means each message will be sync'd sequentially.
+
 ## Running
 
 InboxSync provides a `Runner` class that will loop indefinitely, running syncs every `:interval` seconds.  Stick it in a daemon, a rake task, a CLI, or whatever depending on how you want to invoke it.  Here is an example using it in a basic ruby script:

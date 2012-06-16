@@ -42,6 +42,11 @@ module InboxSync
       :required => true
     }
 
+    should have_option :max_threads, {
+      :default => 1,
+      :required => true
+    }
+
     should have_instance_methods :validate!, :filter
     should have_instance_methods :contains, :like, :includes, :inc
     should have_instance_methods :starts_with, :ends_with, :sw, :ew
