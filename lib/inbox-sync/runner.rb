@@ -17,6 +17,7 @@ module InboxSync
       @logger = opts[:logger] || Logger.new(STDOUT)
       @shutdown = false
       @running_syncs_thread = nil
+      @sync_groups = []
 
       Signal.trap('SIGINT',  lambda{ raise Interrupt, 'SIGINT'  })
       Signal.trap('SIGQUIT', lambda{ raise Interrupt, 'SIGQUIT' })
@@ -93,7 +94,10 @@ module InboxSync
       thread_log "starting syncs..."
 
       begin
-        run_syncs
+        @syncs.each do |sync|
+          run_threaded_sync(sync) if !self.shutdown?
+        end
+        GC.start
       rescue Exception => err
         thread_log_error(err, :error)
       end
@@ -101,22 +105,30 @@ module InboxSync
       thread_log "...syncs finished"
     end
 
-    def run_syncs
-      @syncs.each do |sync|
-        begin
-          sync.setup
-          sync.run(self)
-        rescue Exception => err
-          run_sync_handle_error(sync, err)
+    def run_threaded_sync(sync)
+      begin
+        sync.setup
+        @sync_groups = sync.mail_item_groups
+        thread_log "starting #{@sync_groups.size} sync threads..."
+        @sync_groups.each do |group|
+          thread_log "starting #{group.id} sync thread", :debug
+          group.run(self)
+          sleep(1)
         end
-
-        begin
-          sync.teardown
-        rescue Exception => err
-          run_sync_handle_error(sync, err)
-        end
+      rescue Exception => err
+        run_sync_handle_error(sync, err)
       end
-      GC.start
+
+      begin
+        @sync_groups.each do |group|
+          thread_log "waiting for #{group.id} sync thread to join...", :debug
+          group.join
+        end
+        thread_log "... all #{@sync_groups.size} sync threads are finished"
+        sync.teardown
+      rescue Exception => err
+        run_sync_handle_error(sync, err)
+      end
     end
 
     def run_sync_handle_error(sync, err)

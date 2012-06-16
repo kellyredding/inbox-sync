@@ -3,6 +3,7 @@ require 'net/smtp'
 
 require 'inbox-sync/config'
 require 'inbox-sync/filter_actions'
+require 'inbox-sync/sync/mail_item_group'
 require 'inbox-sync/notice/sync_mail_item_error'
 
 module InboxSync
@@ -53,25 +54,36 @@ module InboxSync
       logger.info "=== #{config_log_detail(@config.source)} sync finished. ==="
     end
 
-    def run(runner=nil)
-      return if runner && runner.shutdown?
-      each_source_mail_item(runner) do |mail_item|
-        begin
-          logger.debug "** #{mail_item.inspect}"
-          response = send_to_dest(mail_item)
-          dest_uid = parse_append_response_uid(response)
-          apply_dest_filters(dest_uid)
-        rescue Exception => err
-          log_error(err)
-          notify(Notice::SyncMailItemError.new(@notify_smtp, @config.notify, {
-            :error => err,
-            :mail_item => mail_item,
-            :sync => self
-          }))
-        ensure
-          archive_on_source(mail_item)
-          mail_item = nil
-        end
+    # this splits the mail_items list into `@config.max_threads` lists
+    # this spreads mails evenly across the groups with earlier items
+    # appearing earliest in each list
+
+    def mail_item_groups
+      num_groups = @config.max_threads
+      groups = []
+      num_groups.times { groups << Runner::MailItemGroup.new(self) }
+      get_mail_items.each_with_index do |item, i|
+        groups[i % num_groups].add(item)
+      end
+      groups
+    end
+
+    def run(mail_item)
+      begin
+        logger.debug "** #{mail_item.inspect}"
+        response = send_to_dest(mail_item)
+        dest_uid = parse_append_response_uid(response)
+        apply_dest_filters(dest_uid)
+      rescue Exception => err
+        log_error(err)
+        notify(Notice::SyncMailItemError.new(@notify_smtp, @config.notify, {
+          :error => err,
+          :mail_item => mail_item,
+          :sync => self
+        }))
+      ensure
+        archive_on_source(mail_item)
+        mail_item = nil
       end
     end
 
@@ -96,21 +108,6 @@ module InboxSync
       logout_imap(@source_imap, @config.source)
       @logged_in = false
       true
-    end
-
-    def each_source_mail_item(runner=nil)
-      logger.info "* find: #{config_log_detail(@config.source)}, #{@config.source.inbox.inspect}..."
-      items = MailItem.find(@source_imap)
-      logger.info "* ...found #{items.size} mail items"
-
-      items.each do |mail_item|
-        if runner && runner.shutdown?
-          logger.info "* the runner has been shutdown - aborting the sync"
-          break
-        end
-        yield mail_item
-      end
-      items = nil
     end
 
     # Send a mail item to the destination:
@@ -221,6 +218,13 @@ module InboxSync
         logger.debug "* EXPUNGE #{config.inbox.inspect}: #{config_log_detail(config)}"
         imap.expunge
       end
+    end
+
+    def get_mail_items
+      logger.info "* find: #{config_log_detail(@config.source)}, #{@config.source.inbox.inspect}..."
+      items = MailItem.find(@source_imap)
+      logger.info "* ...found #{items.size} mail items"
+      items
     end
 
     def logout_imap(imap, config)
