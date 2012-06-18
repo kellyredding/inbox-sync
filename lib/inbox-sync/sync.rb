@@ -54,12 +54,12 @@ module InboxSync
       logger.info "=== #{config_log_detail(@config.source)} sync finished. ==="
     end
 
-    # this splits the mail_items list into `@config.max_threads` lists
-    # this spreads mails evenly across the groups with earlier items
+    # this splits the mail_items list into `@config.num_workers` lists
+    # this spreads mail evenly across the groups with earlier items
     # appearing earliest in each list
 
     def mail_item_groups
-      num_groups = @config.max_threads
+      num_groups = @config.num_workers
       groups = []
       num_groups.times { groups << MailItemGroup.new(self) }
       get_mail_items.each_with_index do |item, i|

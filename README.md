@@ -95,9 +95,9 @@ The (optional) folder on the source to create and archive (move) source inbox me
 
 A logger to use.  Defaults to ruby's `Logger` on `STDOUT`.
 
-### `max_threads`
+### `num_workers`
 
-This is the number of threads to sync mail items with.  Each time a sync is run, the number of mail items that need to sync'd will be broken into `max_threads` groups and each group will sync its mail items in its own thread.  The default is `1` which means each message will be sync'd sequentially.
+This is the number of worker threads to sync mail items with.  Each time a sync is run, the number of mail items that need to sync'd will be broken into `num_workers` groups and each group will sync its mail items in its own thread.  The default is `1` which means only 1 worker thread will be spawned and each message will be sync'd sequentially.
 
 ## Running
 

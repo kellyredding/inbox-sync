@@ -16,7 +16,7 @@ module InboxSync
     opt :archive_folder, :default => 'Archived'
     opt :logger, Logger, :required => true, :default => STDOUT
     opt :filters, :default => [], :required => true
-    opt :max_threads, :default => 1, :required => true
+    opt :num_workers, :default => 1, :required => true
 
     def filter(*args, &block)
       filters << Filter.new(*args, &block)

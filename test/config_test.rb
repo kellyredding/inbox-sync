@@ -42,7 +42,7 @@ module InboxSync
       :required => true
     }
 
-    should have_option :max_threads, {
+    should have_option :num_workers, {
       :default => 1,
       :required => true
     }
