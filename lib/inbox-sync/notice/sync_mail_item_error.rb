@@ -6,17 +6,14 @@ module InboxSync::Notice
   class SyncMailItemError < Base
 
     BODY = %{
-:sync_name
+:error_message
 :mail_item_name
 
-An error happened while syncing this mail item.  The error
-has been logged and the mail item has been archived on the
-source.  The sync will continue processing new mail items.
+There was an error syncing this mail item.  The error has been logged and the mail item has been archived on the source.  The sync will continue processing new mail.
 
-Error
 =====
-  :error_message (:error_name)
-  :error_backtrace
+:error_name
+:error_backtrace
     }.strip.freeze
 
     def initialize(smtp, config, data={})
@@ -28,7 +25,7 @@ Error
     end
 
     def subject
-      super("mail item sync error (#{@mail_item.uid}, #{@sync.uid})")
+      super("mail #{@mail_item.uid} (#{@sync.uid})")
     end
 
     def body
